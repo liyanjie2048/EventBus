@@ -12,15 +12,15 @@ namespace Liyanjie.EventBus.Simulation.EFCore
     /// </summary>
     public class EFCoreEventStore : IEventStore
     {
-        readonly IServiceProvider serviceProvider;
+        readonly IDbContextFactory<EFCoreContext> contextFactory;
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="serviceProvider"></param>
-        public EFCoreEventStore(IServiceProvider serviceProvider)
+        /// <param name="contextFactory"></param>
+        public EFCoreEventStore(IDbContextFactory<EFCoreContext> contextFactory)
         {
-            this.serviceProvider = serviceProvider;
+            this.contextFactory = contextFactory;
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace Liyanjie.EventBus.Simulation.EFCore
         {
             try
             {
-                using var context = serviceProvider.GetRequiredService<EFCoreContext>();
+                using var context = contextFactory.CreateDbContext();
                 var @event = await context.Events
                     .AsTracking()
                     .OrderBy(_ => _.Id)
@@ -58,7 +58,7 @@ namespace Liyanjie.EventBus.Simulation.EFCore
         {
             try
             {
-                using var context = serviceProvider.GetRequiredService<EFCoreContext>();
+                using var context = contextFactory.CreateDbContext();
                 context.Events.Add(new EFCoreEventWrapper
                 {
                     Name = @event.Name,

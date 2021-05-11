@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddEFCoreSimulationEventBus(this IServiceCollection services,
             Action<DbContextOptionsBuilder> optionsAction)
         {
-            services.AddDbContext<EFCoreContext>(optionsAction, ServiceLifetime.Transient, ServiceLifetime.Singleton);
+            services.AddDbContextFactory<EFCoreContext>(optionsAction);
             services.AddSimulationEventBus<EFCoreEventStore>();
 
             return services;
