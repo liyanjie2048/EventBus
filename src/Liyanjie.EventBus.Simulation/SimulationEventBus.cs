@@ -92,6 +92,9 @@ namespace Liyanjie.EventBus.Simulation
         public void Dispose()
         {
             tokenSource?.Cancel();
+            subscriptionsManager.Clear();
+            task?.Dispose();
+            task = null;
         }
 
         CancellationTokenSource tokenSource;
@@ -109,7 +112,7 @@ namespace Liyanjie.EventBus.Simulation
                     {
                         if (!(await eventStore.PopAsync() is EventWrapper @event))
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                            await Task.Delay(TimeSpan.FromSeconds(1));
                             continue;
                         }
 

@@ -26,7 +26,7 @@ namespace Liyanjie.EventBus.RabbitMQ
 
         readonly ILogger<RabbitMQEventBus> logger;
         readonly RabbitMQSettings settings;
-        readonly ISubscriptionsManager subsManager;
+        readonly ISubscriptionsManager subscriptionsManager;
         readonly IServiceProvider serviceProvider;
         readonly IRabbitMQPersistentConnection connection;
         readonly Policy policy;
@@ -36,19 +36,19 @@ namespace Liyanjie.EventBus.RabbitMQ
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="options"></param>
-        /// <param name="subsManager"></param>
+        /// <param name="subscriptionsManager"></param>
         /// <param name="serviceProvider"></param>
         /// <param name="persistentConnection"></param>
         public RabbitMQEventBus(
             ILogger<RabbitMQEventBus> logger,
             IOptions<RabbitMQSettings> options,
-            ISubscriptionsManager subsManager,
+            ISubscriptionsManager subscriptionsManager,
             IServiceProvider serviceProvider,
             IRabbitMQPersistentConnection persistentConnection)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.settings = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            this.subsManager = subsManager ?? new InMemorySubscriptionsManager();
+            this.subscriptionsManager = subscriptionsManager ?? new InMemorySubscriptionsManager();
             this.serviceProvider = serviceProvider;
             this.connection = persistentConnection ?? throw new ArgumentNullException(nameof(persistentConnection));
             this.policy = Policy
@@ -58,7 +58,7 @@ namespace Liyanjie.EventBus.RabbitMQ
                 {
                     logger.LogWarning(exception.ToString());
                 });
-            this.subsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
+            this.subscriptionsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
 
             DoConsume();
         }
@@ -71,8 +71,8 @@ namespace Liyanjie.EventBus.RabbitMQ
         public void RegisterEventHandler<TEvent, TEventHandler>()
             where TEventHandler : IEventHandler<TEvent>
         {
-            var eventName = subsManager.GetEventKey<TEvent>();
-            if (subsManager.HasSubscriptions(eventName))
+            var eventName = subscriptionsManager.GetEventKey<TEvent>();
+            if (subscriptionsManager.HasSubscriptions(eventName))
                 return;
 
             if (!connection.IsConnected)
@@ -84,7 +84,7 @@ namespace Liyanjie.EventBus.RabbitMQ
                 exchange: BROKER_NAME,
                 routingKey: eventName);
 
-            subsManager.AddSubscription<TEvent, TEventHandler>();
+            subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
 
             if (consumerModel?.IsClosed != true)
                 DoConsume();
@@ -98,7 +98,7 @@ namespace Liyanjie.EventBus.RabbitMQ
         public void RemoveEventHandler<TEvent, TEventHandler>()
             where TEventHandler : IEventHandler<TEvent>
         {
-            subsManager.RemoveSubscription<TEvent, TEventHandler>();
+            subscriptionsManager.RemoveSubscription<TEvent, TEventHandler>();
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Liyanjie.EventBus.RabbitMQ
         public void Dispose()
         {
             consumerModel?.Dispose();
-            subsManager.Clear();
+            subscriptionsManager.Clear();
         }
 
         IModel consumerModel;
@@ -185,11 +185,11 @@ namespace Liyanjie.EventBus.RabbitMQ
         }
         async Task ProcessEventAsync(string eventName, string message)
         {
-            if (!subsManager.HasSubscriptions(eventName))
+            if (!subscriptionsManager.HasSubscriptions(eventName))
                 return;
 
-            var eventType = subsManager.GetEventType(eventName);
-            var handlerTypes = subsManager.GetEventHandlerTypes(eventName);
+            var eventType = subscriptionsManager.GetEventType(eventName);
+            var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
 
             var @event = JsonSerializer.Deserialize(message, eventType);
             var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
@@ -212,7 +212,7 @@ namespace Liyanjie.EventBus.RabbitMQ
                 exchange: BROKER_NAME,
                 routingKey: eventName);
 
-            if (subsManager.IsEmpty)
+            if (subscriptionsManager.IsEmpty)
                 consumerModel.Close();
         }
     }

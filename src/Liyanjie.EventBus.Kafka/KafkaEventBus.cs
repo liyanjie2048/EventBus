@@ -115,6 +115,9 @@ namespace Liyanjie.EventBus.Kafka
         public void Dispose()
         {
             tokenSource?.Cancel();
+            subscriptionsManager.Clear();
+            task?.Dispose();
+            task = null;
         }
 
         CancellationTokenSource tokenSource;

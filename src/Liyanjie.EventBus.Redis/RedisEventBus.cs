@@ -81,7 +81,7 @@ namespace Liyanjie.EventBus.Redis
             TEvent @event,
             CancellationToken cancellationToken = default)
         {
-            var length = await redis.GetDatabase().ListLeftPushAsync(settings.ListKey, JsonSerializer.Serialize(new EventWrapper
+            var length = await redis.GetDatabase().ListRightPushAsync(settings.ListKey, JsonSerializer.Serialize(new EventWrapper
             {
                 Name = subscriptionsManager.GetEventKey<TEvent>(),
                 Message = JsonSerializer.Serialize(@event),
@@ -97,6 +97,9 @@ namespace Liyanjie.EventBus.Redis
         public void Dispose()
         {
             tokenSource?.Cancel();
+            subscriptionsManager.Clear();
+            task?.Dispose();
+            task = null;
         }
 
         CancellationTokenSource tokenSource;
@@ -112,10 +115,10 @@ namespace Liyanjie.EventBus.Redis
                 {
                     try
                     {
-                        var value = (string)await redis.GetDatabase().ListRightPopAsync(settings.ListKey);
+                        var value = (string)await redis.GetDatabase().ListLeftPopAsync(settings.ListKey);
                         if (value == null)
                         {
-                            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                            await Task.Delay(TimeSpan.FromSeconds(1));
                             continue;
                         }
 
