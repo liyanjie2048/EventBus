@@ -15,7 +15,7 @@ namespace Liyanjie.EventBus.Simulation
     {
         readonly ILogger<SimulationEventBus> logger;
         readonly ISubscriptionsManager subscriptionsManager;
-        readonly IEventStore eventStore;
+        readonly IEventQueue eventStore;
         readonly IServiceProvider serviceProvider;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Liyanjie.EventBus.Simulation
         public SimulationEventBus(
             ILogger<SimulationEventBus> logger,
             ISubscriptionsManager subscriptionsManager,
-            IEventStore eventStore,
+            IEventQueue eventStore,
             IServiceProvider serviceProvider)
         {
             this.logger = logger;
@@ -108,25 +108,27 @@ namespace Liyanjie.EventBus.Simulation
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    EventWrapper result = default;
                     try
                     {
-                        if (!(await eventStore.PopAsync() is EventWrapper @event))
+                        result = await eventStore.PopAsync();
+                        if (result is null)
                         {
                             await Task.Delay(TimeSpan.FromSeconds(1));
                             continue;
                         }
-
-                        logger.LogInformation($"Consume message '{@event.Name}:{@event.Message}'.");
-
-                        var eventName = @event.Name;
-                        var eventMessage = @event.Message;
-
-                        await ProcessEventAsync(eventName, eventMessage);
                     }
                     catch (Exception e)
                     {
                         logger.LogError($"Error occured: {e.Message}");
+                        continue;
                     }
+
+                    logger.LogInformation($"Consume message '{result.Name}:{result.Message}'.");
+
+                    var eventName = result.Name;
+                    var eventMessage = result.Message;
+                    await ProcessEventAsync(eventName, eventMessage);
                 }
             }, tokenSource.Token);
         }
@@ -142,7 +144,15 @@ namespace Liyanjie.EventBus.Simulation
             foreach (var handlerType in handlerTypes)
             {
                 var handler = scope.ServiceProvider.GetService(handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                try
+                {
+                    await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                    logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                }
             }
         }
         void SubscriptionsManager_OnEventRemoved(object sender, string eventName)

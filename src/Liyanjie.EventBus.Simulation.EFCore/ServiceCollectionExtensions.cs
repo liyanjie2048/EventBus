@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<DbContextOptionsBuilder> optionsAction)
         {
             services.AddDbContextFactory<EFCoreContext>(optionsAction);
-            services.AddSimulationEventBus<EFCoreEventStore>();
+            services.AddSimulationEventBus<EFCoreEventQueue>();
 
             return services;
         }

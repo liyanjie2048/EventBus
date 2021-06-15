@@ -10,7 +10,7 @@ namespace Liyanjie.EventBus.Simulation.EFCore
     /// <summary>
     /// 
     /// </summary>
-    public class EFCoreEventStore : IEventStore
+    public class EFCoreEventQueue : IEventQueue
     {
         readonly IDbContextFactory<EFCoreContext> contextFactory;
 
@@ -18,7 +18,7 @@ namespace Liyanjie.EventBus.Simulation.EFCore
         /// 
         /// </summary>
         /// <param name="contextFactory"></param>
-        public EFCoreEventStore(IDbContextFactory<EFCoreContext> contextFactory)
+        public EFCoreEventQueue(IDbContextFactory<EFCoreContext> contextFactory)
         {
             this.contextFactory = contextFactory;
         }

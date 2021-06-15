@@ -20,7 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddMongoDBSimulationEventBus(this IServiceCollection services, string mongoDBConnectionString)
         {
             services.AddTransient(services => new MongoDBContext(mongoDBConnectionString));
-            services.AddSimulationEventBus<MongoDBEventStore>();
+            services.AddSimulationEventBus<MongoDBEventQueue>();
 
             return services;
         }

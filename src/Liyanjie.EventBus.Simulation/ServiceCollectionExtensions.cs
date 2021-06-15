@@ -13,13 +13,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="TEventStore"></typeparam>
+        /// <typeparam name="TEventQueue"></typeparam>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IServiceCollection AddSimulationEventBus<TEventStore>(this IServiceCollection services)
-            where TEventStore : class, IEventStore
+        public static IServiceCollection AddSimulationEventBus<TEventQueue>(this IServiceCollection services)
+            where TEventQueue : class, IEventQueue
         {
-            services.AddSingleton<IEventStore, TEventStore>();
+            services.AddSingleton<IEventQueue, TEventQueue>();
             services.AddSingleton<ISubscriptionsManager, InMemorySubscriptionsManager>();
             services.AddSingleton<IEventBus, SimulationEventBus>();
 

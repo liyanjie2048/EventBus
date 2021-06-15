@@ -81,11 +81,12 @@ namespace Liyanjie.EventBus.Redis
             TEvent @event,
             CancellationToken cancellationToken = default)
         {
-            var length = await redis.GetDatabase().ListRightPushAsync(settings.ListKey, JsonSerializer.Serialize(new EventWrapper
-            {
-                Name = subscriptionsManager.GetEventKey<TEvent>(),
-                Message = JsonSerializer.Serialize(@event),
-            }));
+            var length = await redis.GetDatabase().ListRightPushAsync(settings.ListKey,
+                JsonSerializer.Serialize(new EventWrapper
+                {
+                    Name = subscriptionsManager.GetEventKey<TEvent>(),
+                    Message = JsonSerializer.Serialize(@event),
+                }));
 
             logger.LogInformation($"Publish event success,list length:{length}");
             return true;
@@ -113,6 +114,7 @@ namespace Liyanjie.EventBus.Redis
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    EventWrapper result = default;
                     try
                     {
                         var value = (string)await redis.GetDatabase().ListLeftPopAsync(settings.ListKey);
@@ -122,19 +124,19 @@ namespace Liyanjie.EventBus.Redis
                             continue;
                         }
 
-                        var result = JsonSerializer.Deserialize<EventWrapper>(value);
-
-                        logger.LogInformation($"Consume message '{result.Name}:{result.Message}'.");
-
-                        var eventName = result.Name;
-                        var eventMessage = result.Message;
-
-                        await ProcessEventAsync(eventName, eventMessage);
+                        result = JsonSerializer.Deserialize<EventWrapper>(value);
                     }
                     catch (Exception e)
                     {
                         logger.LogError($"Error occured: {e.Message}");
+                        continue;
                     }
+
+                    logger.LogInformation($"Consume message '{result.Name}:{result.Message}'.");
+
+                    var eventName = result.Name;
+                    var eventMessage = result.Message;
+                    await ProcessEventAsync(eventName, eventMessage);
                 }
             }, tokenSource.Token);
         }
@@ -150,7 +152,15 @@ namespace Liyanjie.EventBus.Redis
             foreach (var handlerType in handlerTypes)
             {
                 var handler = scope.ServiceProvider.GetService(handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                try
+                {
+                    await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                    logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                }
             }
         }
         void SubscriptionsManager_OnEventRemoved(object sender, string eventName)

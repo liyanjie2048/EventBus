@@ -8,7 +8,7 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
     /// <summary>
     /// 
     /// </summary>
-    public class MongoDBEventStore : IEventStore
+    public class MongoDBEventQueue : IEventQueue
     {
         readonly MongoDBContext context;
 
@@ -16,7 +16,7 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
         /// 
         /// </summary>
         /// <param name="context"></param>
-        public MongoDBEventStore(MongoDBContext context)
+        public MongoDBEventQueue(MongoDBContext context)
         {
             this.context = context;
             if (context.Events.Indexes.List().Any() == false)
@@ -35,14 +35,9 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
                 .Find(Builders<MongoDBEventWrapper>.Filter.Empty)
                 .SortBy(_ => _.Id)
                 .FirstOrDefaultAsync();
-            if (@event == null)
-                return @event;
-
-            var result = await context.Events.DeleteOneAsync(_ => _.Id == @event.Id);
-            if (result.IsAcknowledged)
-                return @event;
-
-            return null;
+            return @event == null
+                ? @event
+                : await context.Events.FindOneAndDeleteAsync(_ => _.Id == @event.Id);
         }
 
         /// <summary>

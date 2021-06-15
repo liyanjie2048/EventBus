@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using MongoDB.Driver;
 
@@ -21,6 +22,12 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
             var mongoUrl = new MongoUrlBuilder(connectionString).ToMongoUrl();
             client = new MongoClient(mongoUrl);
             database = client.GetDatabase(mongoUrl.DatabaseName);
+
+            Events.Indexes.CreateMany(new[]
+            {
+                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Id)),
+                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Name)),
+            });
         }
 
         /// <summary>

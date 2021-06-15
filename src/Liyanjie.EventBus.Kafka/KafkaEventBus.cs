@@ -134,21 +134,22 @@ namespace Liyanjie.EventBus.Kafka
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    ConsumeResult<Guid, string> result = default;
                     try
                     {
-                        var result = consumer.Consume(cancellationToken);
-
-                        logger.LogInformation($"Consumed message '{result.Message}' at '{result.TopicPartitionOffset}'.");
-
-                        var eventName = result.Topic;
-                        var eventMessage = result.Message.Value;
-
-                        await ProcessEventAsync(eventName, eventMessage);
+                        result = consumer.Consume(cancellationToken);
                     }
                     catch (ConsumeException e)
                     {
                         logger.LogError($"Error occured: {e.Error.Reason}");
+                        continue;
                     }
+
+                    logger.LogInformation($"Consumed message '{result.Message}' at '{result.TopicPartitionOffset}'.");
+
+                    var eventName = result.Topic;
+                    var eventMessage = result.Message.Value;
+                    await ProcessEventAsync(eventName, eventMessage);
                 }
             }, tokenSource.Token);
         }
@@ -164,7 +165,15 @@ namespace Liyanjie.EventBus.Kafka
             foreach (var handlerType in handlerTypes)
             {
                 var handler = scope.ServiceProvider.GetService(handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                try
+                {
+                    await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                    logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                }
             }
         }
         void SubscriptionsManager_OnEventRemoved(object sender, string eventName)

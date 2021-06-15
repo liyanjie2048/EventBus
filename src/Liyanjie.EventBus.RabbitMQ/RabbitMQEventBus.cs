@@ -165,12 +165,11 @@ namespace Liyanjie.EventBus.RabbitMQ
             var consumer = new EventingBasicConsumer(consumerModel);
             consumer.Received += async (obj, e) =>
             {
+                consumerModel.BasicAck(e.DeliveryTag, false);
+
                 var eventName = e.RoutingKey;
                 var eventMessage = Encoding.UTF8.GetString(e.Body.ToArray());
-
                 await ProcessEventAsync(eventName, eventMessage);
-
-                consumerModel.BasicAck(e.DeliveryTag, multiple: false);
             };
 
             consumerModel.BasicConsume(
@@ -183,7 +182,7 @@ namespace Liyanjie.EventBus.RabbitMQ
                 DoConsume();
             };
         }
-        async Task ProcessEventAsync(string eventName, string message)
+        async Task ProcessEventAsync(string eventName, string eventMessage)
         {
             if (!subscriptionsManager.HasSubscriptions(eventName))
                 return;
@@ -191,14 +190,22 @@ namespace Liyanjie.EventBus.RabbitMQ
             var eventType = subscriptionsManager.GetEventType(eventName);
             var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
 
-            var @event = JsonSerializer.Deserialize(message, eventType);
+            var @event = JsonSerializer.Deserialize(eventMessage, eventType);
             var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 
             using var scope = serviceProvider.CreateScope();
             foreach (var handlerType in handlerTypes)
             {
                 var handler = scope.ServiceProvider.GetService(handlerType);
-                await (Task)handlerMethod.Invoke(handler, new [] { @event });
+                try
+                {
+                    await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                    logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
+                }
             }
         }
         void SubscriptionsManager_OnEventRemoved(object sender, string eventName)

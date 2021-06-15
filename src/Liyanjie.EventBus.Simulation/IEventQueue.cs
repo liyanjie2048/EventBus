@@ -5,7 +5,7 @@ namespace Liyanjie.EventBus.Simulation
     /// <summary>
     /// 
     /// </summary>
-    public interface IEventStore
+    public interface IEventQueue
     {
         /// <summary>
         /// 
