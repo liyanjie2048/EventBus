@@ -151,7 +151,7 @@ namespace Liyanjie.EventBus.Redis
             using var scope = serviceProvider.CreateScope();
             foreach (var handlerType in handlerTypes)
             {
-                var handler = scope.ServiceProvider.GetService(handlerType);
+                var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 try
                 {
                     await (Task)handlerMethod.Invoke(handler, new[] { @event });
