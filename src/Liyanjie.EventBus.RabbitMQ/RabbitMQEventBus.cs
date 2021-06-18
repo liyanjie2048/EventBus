@@ -204,7 +204,7 @@ namespace Liyanjie.EventBus.RabbitMQ
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex.Message);
+                    logger.LogError($"{ex.Message} in {handlerType.FullName}=>{eventMessage}");
                 }
             }
         }

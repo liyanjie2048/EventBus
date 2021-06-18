@@ -172,7 +172,7 @@ namespace Liyanjie.EventBus.Kafka
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex.Message);
+                    logger.LogError($"{ex.Message} in {handlerType.FullName}=>{eventMessage}");
                 }
             }
         }

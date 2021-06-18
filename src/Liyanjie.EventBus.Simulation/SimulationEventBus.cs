@@ -151,7 +151,7 @@ namespace Liyanjie.EventBus.Simulation
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex.Message);
+                    logger.LogError($"{ex.Message} in {handlerType.FullName}=>{eventMessage}");
                 }
             }
         }
