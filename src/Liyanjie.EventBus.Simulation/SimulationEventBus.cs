@@ -49,9 +49,6 @@ namespace Liyanjie.EventBus.Simulation
             where TEventHandler : IEventHandler<TEvent>
         {
             subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
-
-            if (task == null)
-                DoConsume();
         }
 
         /// <summary>
@@ -83,6 +80,10 @@ namespace Liyanjie.EventBus.Simulation
             });
 
             logger.LogInformation($"Publish event {(result ? "success" : "failed")}");
+
+            if (task == null)
+                DoConsume();
+
             return result;
         }
 
@@ -134,18 +135,20 @@ namespace Liyanjie.EventBus.Simulation
         }
         async Task ProcessEventAsync(string eventName, string eventMessage)
         {
-            var eventType = subscriptionsManager.GetEventType(eventName);
-            var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
+            if (!subscriptionsManager.HasSubscriptions(eventName))
+                return;
 
+            var eventType = subscriptionsManager.GetEventType(eventName);
             var @event = JsonSerializer.Deserialize(eventMessage, eventType);
             var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 
+            var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
             using var scope = serviceProvider.CreateScope();
             foreach (var handlerType in handlerTypes)
             {
-                var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 try
                 {
+                    var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                     await (Task)handlerMethod.Invoke(handler, new[] { @event });
                     logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
                 }

@@ -64,9 +64,6 @@ namespace Liyanjie.EventBus.Kafka
             where TEventHandler : IEventHandler<TEvent>
         {
             subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
-
-            if (task == null)
-                DoConsume();
         }
 
         /// <summary>
@@ -100,6 +97,10 @@ namespace Liyanjie.EventBus.Kafka
             if (result.Status == PersistenceStatus.Persisted)
             {
                 logger.LogInformation($"Publish event success,status:{result.Status},offset:{result.Offset}");
+
+                if (task == null)
+                    DoConsume();
+
                 return true;
             }
             else
@@ -155,18 +156,20 @@ namespace Liyanjie.EventBus.Kafka
         }
         async Task ProcessEventAsync(string eventName, string eventMessage)
         {
-            var eventType = subscriptionsManager.GetEventType(eventName);
-            var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
+            if (!subscriptionsManager.HasSubscriptions(eventName))
+                return;
 
+            var eventType = subscriptionsManager.GetEventType(eventName);
             var @event = JsonSerializer.Deserialize(eventMessage, eventType);
             var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 
+            var handlerTypes = subscriptionsManager.GetEventHandlerTypes(eventName);
             using var scope = serviceProvider.CreateScope();
             foreach (var handlerType in handlerTypes)
             {
-                var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 try
                 {
+                    var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                     await (Task)handlerMethod.Invoke(handler, new[] { @event });
                     logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
                 }

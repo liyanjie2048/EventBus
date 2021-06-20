@@ -85,9 +85,6 @@ namespace Liyanjie.EventBus.RabbitMQ
                 routingKey: eventName);
 
             subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
-
-            if (consumerModel?.IsClosed != true)
-                DoConsume();
         }
 
         /// <summary>
@@ -134,6 +131,9 @@ namespace Liyanjie.EventBus.RabbitMQ
                     basicProperties: properties,
                     body: body);
             });
+
+            if (consumerModel?.IsClosed != true)
+                DoConsume();
 
             return await Task.FromResult(true);
         }
@@ -196,9 +196,9 @@ namespace Liyanjie.EventBus.RabbitMQ
             using var scope = serviceProvider.CreateScope();
             foreach (var handlerType in handlerTypes)
             {
-                var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 try
                 {
+                    var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                     await (Task)handlerMethod.Invoke(handler, new[] { @event });
                     logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
                 }
