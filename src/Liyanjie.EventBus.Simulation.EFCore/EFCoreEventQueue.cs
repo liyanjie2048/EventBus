@@ -34,12 +34,13 @@ namespace Liyanjie.EventBus.Simulation.EFCore
                 using var context = contextFactory.CreateDbContext();
                 var @event = await context.Events
                     .AsTracking()
+                    .Where(_ => _.IsHandled == false)
                     .OrderBy(_ => _.Id)
                     .FirstOrDefaultAsync();
                 if (@event == null)
-                    return @event;
+                    return default;
 
-                context.Events.Remove(@event);
+                @event.IsHandled = true;
 
                 if (await context.SaveChangesAsync() > 0)
                     return @event;

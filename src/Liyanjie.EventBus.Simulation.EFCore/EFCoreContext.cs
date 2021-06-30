@@ -32,6 +32,7 @@ namespace Liyanjie.EventBus.Simulation.EFCore
             var entity = modelBuilder.Entity<EFCoreEventWrapper>();
             entity.HasKey(_ => _.Id);
             entity.HasIndex(_ => _.Name);
+            entity.HasIndex(_ => _.IsHandled);
         }
     }
 }

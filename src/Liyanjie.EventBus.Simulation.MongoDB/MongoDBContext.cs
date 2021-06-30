@@ -27,6 +27,7 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
             {
                 new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Id)),
                 new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Name)),
+                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.IsHandled)),
             });
         }
 

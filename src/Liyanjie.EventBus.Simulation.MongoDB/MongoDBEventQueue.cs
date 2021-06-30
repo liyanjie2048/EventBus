@@ -19,10 +19,6 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
         public MongoDBEventQueue(MongoDBContext context)
         {
             this.context = context;
-            if (context.Events.Indexes.List().Any() == false)
-            {
-                context.Events.Indexes.CreateOne(new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Id)));
-            }
         }
 
         /// <summary>
@@ -32,12 +28,13 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
         public async Task<EventWrapper> PopAsync()
         {
             var @event = await context.Events
-                .Find(Builders<MongoDBEventWrapper>.Filter.Empty)
+                .Find(Builders<MongoDBEventWrapper>.Filter.Where(_ => _.IsHandled == false))
                 .SortBy(_ => _.Id)
                 .FirstOrDefaultAsync();
             return @event == null
                 ? @event
-                : await context.Events.FindOneAndDeleteAsync(_ => _.Id == @event.Id);
+                : await context.Events.FindOneAndUpdateAsync(_ => _.Id == @event.Id, Builders<MongoDBEventWrapper>.Update
+                    .Set(_ => _.IsHandled, true));
         }
 
         /// <summary>
