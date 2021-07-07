@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace Liyanjie.EventBus.Simulation.MongoDB
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public class MongoDBEventWrapper : EventWrapper
+    public class EFCoreEvent : SimulationEvent
     {
         /// <summary>
         /// 

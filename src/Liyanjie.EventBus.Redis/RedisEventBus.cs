@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 using StackExchange.Redis;
 
-namespace Liyanjie.EventBus.Redis
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 

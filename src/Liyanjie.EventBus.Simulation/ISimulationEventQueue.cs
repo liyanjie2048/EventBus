@@ -1,22 +1,22 @@
 ﻿using System.Threading.Tasks;
 
-namespace Liyanjie.EventBus.Simulation
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public interface IEventQueue
+    public interface ISimulationEventQueue
     {
         /// <summary>
         /// 
         /// </summary>
         /// <param name="event"></param>
-        Task<bool> PushAsync(EventWrapper @event);
+        Task<bool> PushAsync(SimulationEvent @event);
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        Task<EventWrapper> PopAsync();
+        Task<SimulationEvent> PopAsync();
     }
 }

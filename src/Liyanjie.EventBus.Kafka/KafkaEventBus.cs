@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
 
-namespace Liyanjie.EventBus.Kafka
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 

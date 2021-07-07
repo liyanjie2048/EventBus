@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.1;</TargetFrameworks>
+        <TargetFrameworks>net461;netstandard2.1;</TargetFrameworks>
         <Description>Liyanjie.EventBus.Redis</Description>
         <Copyright>© Liyanjie.net</Copyright>
         <Authors>liyanjie8712@outlook.com</Authors>
@@ -9,21 +9,29 @@
         <RepositoryUrl>https://github.com/liyanjie8712/EventBus</RepositoryUrl>
         <PackageProjectUrl>https://github.com/liyanjie8712/EventBus</PackageProjectUrl>
         <RepositoryType>Git</RepositoryType>
+        <RootNamespace>Liyanjie.EventBus</RootNamespace>
+        <PackageIcon>liyanjie.net.256.png</PackageIcon>
+        <PackageIconUrl />
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)'=='Release'">
         <DocumentationFile>bin\Release\Liyanjie.EventBus.Redis.xml</DocumentationFile>
     </PropertyGroup>
 
+    <ItemGroup>
+        <None Include="..\..\liyanjie.net.256.png">
+            <Pack>True</Pack>
+            <PackagePath></PackagePath>
+        </None>
+    </ItemGroup>
+
     <Target Name="MovePackage" AfterTargets="Pack">
         <Move SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="C:\_NugetPackages\" />
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.2.4" />
-        <PackageReference Include="System.Text.Json" Version="5.0.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     </ItemGroup>
 
     <ItemGroup>

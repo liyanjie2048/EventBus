@@ -1,4 +1,4 @@
-﻿namespace Liyanjie.EventBus.Redis
+﻿namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 

@@ -1,6 +1,6 @@
 ﻿using RabbitMQ.Client;
 
-namespace Liyanjie.EventBus.RabbitMQ
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 

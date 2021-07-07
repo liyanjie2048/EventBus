@@ -1,9 +1,9 @@
-﻿namespace Liyanjie.EventBus.Simulation
+﻿namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public class EventWrapper
+    public class SimulationEvent
     {
         /// <summary>
         /// 

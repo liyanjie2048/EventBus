@@ -15,7 +15,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 
-namespace Liyanjie.EventBus.RabbitMQ
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 

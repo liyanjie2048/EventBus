@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 
 using MongoDB.Driver;
 
-namespace Liyanjie.EventBus.Simulation.MongoDB
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public class MongoDBEventQueue : IEventQueue
+    public class MongoDBEventQueue : ISimulationEventQueue
     {
         readonly MongoDBContext context;
 
@@ -25,15 +25,15 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
         /// 
         /// </summary>
         /// <returns></returns>
-        public async Task<EventWrapper> PopAsync()
+        public async Task<SimulationEvent> PopAsync()
         {
             var @event = await context.Events
-                .Find(Builders<MongoDBEventWrapper>.Filter.Where(_ => _.IsHandled == false))
+                .Find(Builders<MongoDBEvent>.Filter.Where(_ => _.IsHandled == false))
                 .SortBy(_ => _.Id)
                 .FirstOrDefaultAsync();
             return @event == null
                 ? @event
-                : await context.Events.FindOneAndUpdateAsync(_ => _.Id == @event.Id, Builders<MongoDBEventWrapper>.Update
+                : await context.Events.FindOneAndUpdateAsync(_ => _.Id == @event.Id, Builders<MongoDBEvent>.Update
                     .Set(_ => _.IsHandled, true));
         }
 
@@ -42,11 +42,11 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public async Task<bool> PushAsync(EventWrapper @event)
+        public async Task<bool> PushAsync(SimulationEvent @event)
         {
             try
             {
-                await context.Events.InsertOneAsync(new MongoDBEventWrapper
+                await context.Events.InsertOneAsync(new MongoDBEvent
                 {
                     Name = @event.Name,
                     Message = @event.Message,

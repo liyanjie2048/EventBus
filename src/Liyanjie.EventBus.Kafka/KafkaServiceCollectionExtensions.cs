@@ -1,14 +1,13 @@
 ﻿using System;
 
 using Liyanjie.EventBus;
-using Liyanjie.EventBus.Kafka;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
     /// 
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class KafkaServiceCollectionExtensions
     {
         /// <summary>
         /// 

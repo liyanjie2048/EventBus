@@ -1,15 +1,13 @@
 ﻿using System;
 
 using Liyanjie.EventBus;
-using Liyanjie.EventBus.Simulation;
-using Liyanjie.EventBus.Simulation.MongoDB;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
     /// 
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class MongoDBServiceCollectionExtensions
     {
         /// <summary>
         /// 

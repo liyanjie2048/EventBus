@@ -3,7 +3,7 @@ using System.Linq;
 
 using MongoDB.Driver;
 
-namespace Liyanjie.EventBus.Simulation.MongoDB
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
@@ -25,15 +25,15 @@ namespace Liyanjie.EventBus.Simulation.MongoDB
 
             Events.Indexes.CreateMany(new[]
             {
-                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Id)),
-                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.Name)),
-                new CreateIndexModel<MongoDBEventWrapper>(Builders<MongoDBEventWrapper>.IndexKeys.Ascending(_ => _.IsHandled)),
+                new CreateIndexModel<MongoDBEvent>(Builders<MongoDBEvent>.IndexKeys.Ascending(_ => _.Id)),
+                new CreateIndexModel<MongoDBEvent>(Builders<MongoDBEvent>.IndexKeys.Ascending(_ => _.Name)),
+                new CreateIndexModel<MongoDBEvent>(Builders<MongoDBEvent>.IndexKeys.Ascending(_ => _.IsHandled)),
             });
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public IMongoCollection<MongoDBEventWrapper> Events => database.GetCollection<MongoDBEventWrapper>(nameof(Events));
+        public IMongoCollection<MongoDBEvent> Events => database.GetCollection<MongoDBEvent>(nameof(Events));
     }
 }

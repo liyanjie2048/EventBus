@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,29 +12,27 @@ namespace Liyanjie.EventBus
     /// <summary>
     /// 
     /// </summary>
-    public class SimulationEventBus : IEventBus, IDisposable
+    public class InMemoryEventBus : IEventBus, IDisposable
     {
-        readonly ILogger<SimulationEventBus> logger;
+        readonly ILogger<InMemoryEventBus> logger;
         readonly ISubscriptionsManager subscriptionsManager;
-        readonly ISimulationEventQueue eventStore;
         readonly IServiceProvider serviceProvider;
+        readonly ConcurrentQueue<EventWrapper> queue = new();
+
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="subscriptionsManager"></param>
-        /// <param name="eventStore"></param>
         /// <param name="serviceProvider"></param>
-        public SimulationEventBus(
-            ILogger<SimulationEventBus> logger,
+        public InMemoryEventBus(
+            ILogger<InMemoryEventBus> logger,
             ISubscriptionsManager subscriptionsManager,
-            ISimulationEventQueue eventStore,
             IServiceProvider serviceProvider)
         {
             this.logger = logger;
             this.subscriptionsManager = subscriptionsManager ?? new InMemorySubscriptionsManager();
-            this.eventStore = eventStore;
             this.serviceProvider = serviceProvider;
             this.subscriptionsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
 
@@ -73,18 +72,20 @@ namespace Liyanjie.EventBus
             TEvent @event,
             CancellationToken cancellationToken = default)
         {
-            var result = await eventStore.PushAsync(new SimulationEvent
+            await Task.CompletedTask;
+
+            queue.Enqueue(new EventWrapper
             {
                 Name = subscriptionsManager.GetEventKey<TEvent>(),
                 Message = JsonSerializer.Serialize(@event),
             });
 
-            logger.LogInformation($"Publish event {(result ? "success" : "failed")}");
+            logger.LogInformation($"Publish event success,list length:{queue.Count}");
 
             if (task == null)
                 DoConsume();
 
-            return result;
+            return true;
         }
 
         /// <summary>
@@ -93,9 +94,11 @@ namespace Liyanjie.EventBus
         public void Dispose()
         {
             tokenSource?.Cancel();
-            subscriptionsManager.Clear();
             task?.Dispose();
-            task = null;
+            subscriptionsManager.Clear();
+#if NETSTANDARD
+            queue.Clear();
+#endif
         }
 
         CancellationTokenSource tokenSource;
@@ -109,19 +112,10 @@ namespace Liyanjie.EventBus
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    SimulationEvent result = default;
-                    try
+                    var result = queue.TryDequeue(out var @event) ? @event : null;
+                    if (result == null)
                     {
-                        result = await eventStore.PopAsync();
-                        if (result is null)
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(1));
-                            continue;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        logger.LogError($"Error occured: {e.Message}");
+                        await Task.Delay(TimeSpan.FromSeconds(1));
                         continue;
                     }
 
@@ -165,6 +159,12 @@ namespace Liyanjie.EventBus
                 task?.Dispose();
                 task = null;
             }
+        }
+
+        class EventWrapper
+        {
+            public string Name { get; set; }
+            public string Message { get; set; }
         }
     }
 }

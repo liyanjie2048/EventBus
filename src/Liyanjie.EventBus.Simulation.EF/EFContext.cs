@@ -1,35 +1,34 @@
 ﻿using System;
-
-using Microsoft.EntityFrameworkCore;
+using System.Data.Entity;
 
 namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public class EFCoreContext : DbContext
+    public class EFContext : DbContext
     {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="options"></param>
-        public EFCoreContext(DbContextOptions<EFCoreContext> options)
-            : base(options) { }
+        /// <param name="nameOrConnectionString"></param>
+        public EFContext(string nameOrConnectionString)
+            : base(nameOrConnectionString) { }
 
         /// <summary>
         /// 
         /// </summary>
-        public DbSet<EFCoreEvent> Events { get; set; }
+        public IDbSet<EFEvent> Events { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="modelBuilder"></param>
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            var entity = modelBuilder.Entity<EFCoreEvent>();
+            var entity = modelBuilder.Entity<EFEvent>();
             entity.HasKey(_ => _.Id);
             entity.HasIndex(_ => _.Name);
             entity.HasIndex(_ => _.IsHandled);

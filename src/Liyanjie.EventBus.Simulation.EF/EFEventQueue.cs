@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Liyanjie.EventBus
@@ -10,17 +10,17 @@ namespace Liyanjie.EventBus
     /// <summary>
     /// 
     /// </summary>
-    public class EFCoreEventQueue : ISimulationEventQueue
+    public class EFEventQueue : ISimulationEventQueue
     {
-        readonly IDbContextFactory<EFCoreContext> contextFactory;
+        readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="contextFactory"></param>
-        public EFCoreEventQueue(IDbContextFactory<EFCoreContext> contextFactory)
+        /// <param name="serviceProvider"></param>
+        public EFEventQueue(IServiceProvider serviceProvider)
         {
-            this.contextFactory = contextFactory;
+            this.serviceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -31,9 +31,10 @@ namespace Liyanjie.EventBus
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
+                using var scope = serviceProvider.CreateScope();
+                using var context = scope.ServiceProvider.GetRequiredService<EFContext>();
                 var @event = await context.Events
-                    .AsTracking()
+                    .AsNoTracking()
                     .Where(_ => _.IsHandled == false)
                     .OrderBy(_ => _.Id)
                     .FirstOrDefaultAsync();
@@ -59,8 +60,9 @@ namespace Liyanjie.EventBus
         {
             try
             {
-                using var context = contextFactory.CreateDbContext();
-                context.Events.Add(new EFCoreEvent
+                using var scope = serviceProvider.CreateScope();
+                using var context = scope.ServiceProvider.GetRequiredService<EFContext>();
+                context.Events.Add(new EFEvent
                 {
                     Name = @event.Name,
                     Message = @event.Message,

@@ -1,14 +1,13 @@
 ﻿using System;
 
 using Liyanjie.EventBus;
-using Liyanjie.EventBus.RabbitMQ;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
     /// 
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class RedisServiceCollectionExtensions
     {
         /// <summary>
         /// 
@@ -16,13 +15,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services"></param>
         /// <param name="configureOptions"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRabbitMQEventBus(this IServiceCollection services,
-            Action<RabbitMQSettings> configureOptions)
+        public static IServiceCollection AddRedisEventBus(this IServiceCollection services,
+            Action<RedisSettings> configureOptions)
         {
             services.Configure(configureOptions ?? throw new ArgumentNullException(nameof(configureOptions)));
             services.AddSingleton<ISubscriptionsManager, InMemorySubscriptionsManager>();
-            services.AddSingleton<IRabbitMQPersistentConnection, DefaultRabbitMQPersistentConnection>();
-            services.AddSingleton<IEventBus, RabbitMQEventBus>();
+            services.AddSingleton<IEventBus, RedisEventBus>();
 
             return services;
         }

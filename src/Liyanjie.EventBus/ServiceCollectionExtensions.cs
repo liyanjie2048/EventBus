@@ -1,7 +1,6 @@
 ﻿using System;
 
 using Liyanjie.EventBus;
-using Liyanjie.EventBus.Simulation;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -13,15 +12,12 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// 
         /// </summary>
-        /// <typeparam name="TEventQueue"></typeparam>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IServiceCollection AddSimulationEventBus<TEventQueue>(this IServiceCollection services)
-            where TEventQueue : class, IEventQueue
+        public static IServiceCollection AddInMemoryEventBus(this IServiceCollection services)
         {
-            services.AddSingleton<IEventQueue, TEventQueue>();
             services.AddSingleton<ISubscriptionsManager, InMemorySubscriptionsManager>();
-            services.AddSingleton<IEventBus, SimulationEventBus>();
+            services.AddSingleton<IEventBus, InMemoryEventBus>();
 
             return services;
         }

@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace Liyanjie.EventBus.Simulation.EFCore
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
     /// </summary>
-    public class EFCoreEventWrapper : EventWrapper
+    public class EFEvent : SimulationEvent
     {
         /// <summary>
         /// 

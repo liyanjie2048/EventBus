@@ -1,8 +1,6 @@
 ﻿using System;
 
 using Liyanjie.EventBus;
-using Liyanjie.EventBus.Simulation;
-using Liyanjie.EventBus.Simulation.EFCore;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
     /// <summary>
     /// 
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class EFCoreServiceCollectionExtensions
     {
         /// <summary>
         /// 

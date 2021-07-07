@@ -1,6 +1,6 @@
 ﻿using Confluent.Kafka;
 
-namespace Liyanjie.EventBus.Kafka
+namespace Liyanjie.EventBus
 {
     /// <summary>
     /// 
