@@ -1,5 +1,7 @@
 # EventBus
 
+事件总线
+
 - #### Liyanjie.EventBus
   - IEventBus
   - IEventHandler&lt;TEvent&gt;
