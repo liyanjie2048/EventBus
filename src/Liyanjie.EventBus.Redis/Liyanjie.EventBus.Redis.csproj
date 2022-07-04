@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netstandard2.1;</TargetFrameworks>
+        <TargetFrameworks>netstandard2.1;</TargetFrameworks>
         <Description>Liyanjie.EventBus.Redis</Description>
         <Copyright>© Liyanjie.net</Copyright>
         <Authors>liyanjie8712@outlook.com</Authors>
@@ -30,8 +30,8 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
     </ItemGroup>
 
     <ItemGroup>

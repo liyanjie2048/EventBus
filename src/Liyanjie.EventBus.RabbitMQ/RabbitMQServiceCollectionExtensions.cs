@@ -2,28 +2,27 @@
 
 using Liyanjie.EventBus;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace Microsoft.Extensions.DependencyInjection;
+
+/// <summary>
+/// 
+/// </summary>
+public static class RabbitMQServiceCollectionExtensions
 {
     /// <summary>
     /// 
     /// </summary>
-    public static class RabbitMQServiceCollectionExtensions
+    /// <param name="services"></param>
+    /// <param name="configureOptions"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddRabbitMQEventBus(this IServiceCollection services,
+        Action<RabbitMQSettings> configureOptions)
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="configureOptions"></param>
-        /// <returns></returns>
-        public static IServiceCollection AddRabbitMQEventBus(this IServiceCollection services,
-            Action<RabbitMQSettings> configureOptions)
-        {
-            services.Configure(configureOptions ?? throw new ArgumentNullException(nameof(configureOptions)));
-            services.AddSingleton<ISubscriptionsManager, InMemorySubscriptionsManager>();
-            services.AddSingleton<IRabbitMQPersistentConnection, DefaultRabbitMQPersistentConnection>();
-            services.AddSingleton<IEventBus, RabbitMQEventBus>();
+        services.Configure(configureOptions ?? throw new ArgumentNullException(nameof(configureOptions)));
+        services.AddSingleton<ISubscriptionsManager, InMemorySubscriptionsManager>();
+        services.AddSingleton<IRabbitMQPersistentConnection, DefaultRabbitMQPersistentConnection>();
+        services.AddSingleton<IEventBus, RabbitMQEventBus>();
 
-            return services;
-        }
+        return services;
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-
+﻿
 using MongoDB.Driver;
 
 namespace Liyanjie.EventBus
@@ -10,8 +8,8 @@ namespace Liyanjie.EventBus
     /// </summary>
     public class MongoDBContext
     {
-        readonly IMongoClient client;
-        readonly IMongoDatabase database;
+        readonly IMongoClient _client;
+        readonly IMongoDatabase _database;
 
         /// <summary>
         /// 
@@ -20,8 +18,8 @@ namespace Liyanjie.EventBus
         public MongoDBContext(string connectionString)
         {
             var mongoUrl = new MongoUrlBuilder(connectionString).ToMongoUrl();
-            client = new MongoClient(mongoUrl);
-            database = client.GetDatabase(mongoUrl.DatabaseName);
+            _client = new MongoClient(mongoUrl);
+            _database = _client.GetDatabase(mongoUrl.DatabaseName);
 
             Events.Indexes.CreateMany(new[]
             {
@@ -34,6 +32,6 @@ namespace Liyanjie.EventBus
         /// <summary>
         /// 
         /// </summary>
-        public IMongoCollection<MongoDBEvent> Events => database.GetCollection<MongoDBEvent>(nameof(Events));
+        public IMongoCollection<MongoDBEvent> Events => _database.GetCollection<MongoDBEvent>(nameof(Events));
     }
 }

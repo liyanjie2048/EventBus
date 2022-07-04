@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netstandard2.1;</TargetFrameworks>
+        <TargetFrameworks>netstandard2.1;</TargetFrameworks>
         <Description>Liyanjie.EventBus.Kafka</Description>
         <Copyright>© Liyanjie.net</Copyright>
         <Authors>liyanjie8712@outlook.com</Authors>
@@ -30,9 +30,9 @@
     </Target>
 
     <ItemGroup>
-        <PackageReference Include="Confluent.Kafka" Version="1.7.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-        <PackageReference Include="Polly" Version="7.2.2" />
+        <PackageReference Include="Confluent.Kafka" Version="1.9.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+        <PackageReference Include="Polly" Version="7.2.3" />
     </ItemGroup>
 
     <ItemGroup>

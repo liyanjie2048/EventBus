@@ -1,26 +1,24 @@
-﻿using System;
-
+﻿
 using Liyanjie.EventBus;
 
-namespace Microsoft.Extensions.DependencyInjection
+namespace Microsoft.Extensions.DependencyInjection;
+
+/// <summary>
+/// 
+/// </summary>
+public static class MongoDBServiceCollectionExtensions
 {
     /// <summary>
     /// 
     /// </summary>
-    public static class MongoDBServiceCollectionExtensions
+    /// <param name="services"></param>
+    /// <param name="mongoDBConnectionString"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddMongoDBSimulationEventBus(this IServiceCollection services, string mongoDBConnectionString)
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="mongoDBConnectionString"></param>
-        /// <returns></returns>
-        public static IServiceCollection AddMongoDBSimulationEventBus(this IServiceCollection services, string mongoDBConnectionString)
-        {
-            services.AddTransient(services => new MongoDBContext(mongoDBConnectionString));
-            services.AddSimulationEventBus<MongoDBEventQueue>();
+        services.AddTransient(services => new MongoDBContext(mongoDBConnectionString));
+        services.AddSimulationEventBus<MongoDBEventQueue>();
 
-            return services;
-        }
+        return services;
     }
 }

@@ -1,30 +1,29 @@
 ﻿using RabbitMQ.Client;
 
-namespace Liyanjie.EventBus
+namespace Liyanjie.EventBus;
+
+/// <summary>
+/// 
+/// </summary>
+public class RabbitMQSettings
 {
     /// <summary>
     /// 
     /// </summary>
-    public class RabbitMQSettings
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public int RetryCountWhenPublishEvent { get; set; }
+    public int RetryCountWhenPublishEvent { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public ConnectionFactory Connection { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public ConnectionFactory Connection { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public int RetryCountWehnConnecting { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public int RetryCountWehnConnecting { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public string QueueName { get; set; }
-    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string QueueName { get; set; }
 }
