@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 using Liyanjie.EventBus;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -12,11 +13,15 @@ public static class MongoDBServiceCollectionExtensions
     /// 
     /// </summary>
     /// <param name="services"></param>
-    /// <param name="mongoDBConnectionString"></param>
+    /// <param name="implementationFactory"></param>
+    /// <param name="configureOptions"></param>
     /// <returns></returns>
-    public static IServiceCollection AddMongoDBSimulationEventBus(this IServiceCollection services, string mongoDBConnectionString)
+    public static IServiceCollection AddMongoDBSimulationEventBus(this IServiceCollection services,
+        Func<IServiceProvider, MongoDBContext> implementationFactory,
+        Action<MongoDBSettings> configureOptions)
     {
-        services.AddTransient(services => new MongoDBContext(mongoDBConnectionString));
+        services.Configure(configureOptions ?? throw new ArgumentNullException(nameof(configureOptions)));
+        services.AddSingleton(implementationFactory);
         services.AddSimulationEventBus<MongoDBEventQueue>();
 
         return services;

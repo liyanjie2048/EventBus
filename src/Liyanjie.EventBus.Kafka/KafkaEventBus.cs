@@ -81,18 +81,18 @@ public class KafkaEventBus : IEventBus, IDisposable
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
-    /// <param name="event"></param>
+    /// <param name="eventData"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent @event,
+        TEvent eventData,
         CancellationToken cancellationToken = default)
     {
-        using var producer = new ProducerBuilder<Guid, string>(_settings.ProducerConfig).Build();
+        using var producer = new ProducerBuilder<Guid, string>(_settings.ProducerConfig ?? throw new ArgumentNullException(nameof(_settings.ProducerConfig))).Build();
         var result = await _policy.ExecuteAsync(async () => await producer.ProduceAsync(GetTopic<TEvent>(), new Message<Guid, string>
         {
             Key = Guid.NewGuid(),
-            Value = JsonSerializer.Serialize(@event),
+            Value = JsonSerializer.Serialize(eventData),
         }, cancellationToken));
         if (result.Status == PersistenceStatus.Persisted)
         {
@@ -121,8 +121,8 @@ public class KafkaEventBus : IEventBus, IDisposable
         task = null;
     }
 
-    CancellationTokenSource tokenSource;
-    Task task;
+    CancellationTokenSource? tokenSource;
+    Task? task;
     void DoConsume()
     {
         tokenSource = new CancellationTokenSource();
@@ -130,12 +130,12 @@ public class KafkaEventBus : IEventBus, IDisposable
         {
             var cancellationToken = (CancellationToken)token;
 
-            using var consumer = new ConsumerBuilder<Guid, string>(_settings.ConsumerConfig).Build();
+            using var consumer = new ConsumerBuilder<Guid, string>(_settings.ConsumerConfig ?? throw new ArgumentNullException(nameof(_settings.ConsumerConfig))).Build();
             consumer.Subscribe(_subscriptionsManager.GetEventNames());
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                ConsumeResult<Guid, string> result = default;
+                ConsumeResult<Guid, string>? result = default;
                 try
                 {
                     result = consumer.Consume(cancellationToken);
@@ -160,6 +160,9 @@ public class KafkaEventBus : IEventBus, IDisposable
             return;
 
         var eventType = _subscriptionsManager.GetEventType(eventName);
+        if (eventType is null)
+            return;
+
         var @event = JsonSerializer.Deserialize(eventMessage, eventType);
         var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Liyanjie.EventBus;
 
@@ -12,43 +13,44 @@ namespace Liyanjie.EventBus;
 /// </summary>
 public class EFEventQueue : ISimulationEventQueue
 {
-    readonly IServiceProvider serviceProvider;
+    readonly EFSettings _settings;
+    readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="options"></param>
     /// <param name="serviceProvider"></param>
-    public EFEventQueue(IServiceProvider serviceProvider)
+    public EFEventQueue(
+        IOptions<EFSettings> options,
+        IServiceProvider serviceProvider)
     {
-        this.serviceProvider = serviceProvider;
+        _settings = options.Value;
+        _serviceProvider = serviceProvider.CreateScope().ServiceProvider;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public async Task<SimulationEvent> PopAsync()
+    public void AddChannel()
     {
-        try
+        using var context = _serviceProvider.GetRequiredService<EFContext>();
+        if (context.Channels.AsNoTracking().Any(_ => _.Name == _settings.ChannelName))
         {
-            using var scope = serviceProvider.CreateScope();
-            using var context = scope.ServiceProvider.GetRequiredService<EFContext>();
-            var @event = await context.Events
-                .AsNoTracking()
-                .Where(_ => _.IsHandled == false)
-                .OrderBy(_ => _.Id)
-                .FirstOrDefaultAsync();
-            if (@event == null)
-                return default;
-
-            @event.IsHandled = true;
-
-            if (await context.SaveChangesAsync() > 0)
-                return @event;
+            context.Channels.Add(new()
+            {
+                Name = _settings.ChannelName
+            });
+            context.SaveChanges();
         }
-        catch { }
+    }
 
-        return null;
+    public void RemoveChannel()
+    {
+        using var context = _serviceProvider.GetRequiredService<EFContext>();
+        if (context.Channels.AsNoTracking().Any(_ => _.Name == _settings.ChannelName))
+        {
+            var channel = context.Channels.Single(_ => _.Name == _settings.ChannelName);
+            context.Channels.Remove(channel);
+            context.SaveChanges();
+        }
     }
 
     /// <summary>
@@ -60,18 +62,50 @@ public class EFEventQueue : ISimulationEventQueue
     {
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            using var context = scope.ServiceProvider.GetRequiredService<EFContext>();
-            context.Events.Add(new EFEvent
+            using var context = _serviceProvider.GetRequiredService<EFContext>();
+            var channels = await context.Channels.AsNoTracking()
+                .Select(_ => _.Name)
+                .ToListAsync();
+            foreach (var item in channels)
             {
-                Name = @event.Name,
-                EventData = @event.EventData,
-            });
+                context.Events.Add(new EFEvent
+                {
+                    Name = @event.Name,
+                    EventData = @event.EventData,
+                    Channel = item,
+                });
+            }
 
             return await context.SaveChangesAsync() > 0;
         }
-        catch { }
+        catch (Exception) { }
 
-        return false;
+        return default;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public async Task<SimulationEvent?> PopAsync()
+    {
+        try
+        {
+            using var context = _serviceProvider.GetRequiredService<EFContext>();
+            var @event = await context.Events
+                .Where(_ => _.Channel == _settings.ChannelName)
+                .OrderBy(_ => _.Id)
+                .FirstOrDefaultAsync();
+            if (@event == null)
+                return default;
+
+            context.Events.Remove(@event);
+
+            if (await context.SaveChangesAsync() > 0)
+                return @event;
+        }
+        catch (Exception) { }
+
+        return default;
     }
 }

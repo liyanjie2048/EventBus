@@ -15,10 +15,10 @@ public class KafkaSettings
     /// <summary>
     /// 
     /// </summary>
-    public ProducerConfig ProducerConfig { get; set; }
+    public ProducerConfig? ProducerConfig { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    public ConsumerConfig ConsumerConfig { get; set; }
+    public ConsumerConfig? ConsumerConfig { get; set; }
 }

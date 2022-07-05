@@ -53,7 +53,7 @@ public interface ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    Type GetEventType(string eventName);
+    Type? GetEventType(string eventName);
 
     /// <summary>
     /// 

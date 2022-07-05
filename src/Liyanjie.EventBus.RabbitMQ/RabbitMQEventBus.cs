@@ -102,18 +102,21 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
-    /// <param name="event"></param>
+    /// <param name="eventData"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent @event,
+        TEvent eventData,
         CancellationToken cancellationToken = default)
     {
+        if (eventData is null)
+            return false;
+
         if (!_connection.IsConnected)
             _connection.TryConnect();
 
-        var eventName = @event.GetType().Name;
-        var eventMessage = JsonSerializer.Serialize(@event);
+        var eventName = eventData.GetType().Name;
+        var eventMessage = JsonSerializer.Serialize(eventData);
         var body = Encoding.UTF8.GetBytes(eventMessage);
 
         using var model = _connection.CreateModel();
@@ -147,7 +150,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
         _subscriptionsManager.Clear();
     }
 
-    IModel consumerModel;
+    IModel? consumerModel;
     void DoConsume()
     {
         if (!_connection.IsConnected)
@@ -188,6 +191,9 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             return;
 
         var eventType = _subscriptionsManager.GetEventType(eventName);
+        if (eventType is null)
+            return;
+
         var handlerTypes = _subscriptionsManager.GetEventHandlerTypes(eventName);
 
         var @event = JsonSerializer.Deserialize(eventMessage, eventType);
@@ -220,6 +226,6 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             routingKey: eventName);
 
         if (_subscriptionsManager.IsEmpty)
-            consumerModel.Close();
+            consumerModel?.Close();
     }
 }

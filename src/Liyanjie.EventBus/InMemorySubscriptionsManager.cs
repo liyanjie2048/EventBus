@@ -66,7 +66,7 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
             _eventHandlers.Remove(eventName);
             _eventTypes.Remove(eventName);
 
-            OnEventRemoved.Invoke(this, eventName);
+            OnEventRemoved?.Invoke(this, eventName);
         }
     }
 
@@ -95,7 +95,8 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    public Type GetEventType(string eventName) => _eventTypes.TryGetValue(eventName, out var type) ? type : null;
+    public Type? GetEventType(string eventName)
+        => _eventTypes.TryGetValue(eventName, out var type) ? type : null;
 
     /// <summary>
     /// 
@@ -110,5 +111,5 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     /// <summary>
     /// 
     /// </summary>
-    public event EventHandler<string> OnEventRemoved;
+    public event EventHandler<string>? OnEventRemoved;
 }

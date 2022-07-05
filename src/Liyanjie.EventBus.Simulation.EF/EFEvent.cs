@@ -15,5 +15,5 @@ public class EFEvent : SimulationEvent
     /// <summary>
     /// 
     /// </summary>
-    public bool IsHandled { get; set; }
+    public string? Channel { get; set; }
 }

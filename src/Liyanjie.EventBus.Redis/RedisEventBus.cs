@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ public class RedisEventBus : IEventBus, IDisposable
         _settings = options.Value;
         _subscriptionsManager = subscriptionsManager ?? new InMemorySubscriptionsManager();
         _serviceProvider = serviceProvider;
-        _redis = ConnectionMultiplexer.Connect(_settings.ConnectionString);
+        _redis = ConnectionMultiplexer.Connect(_settings.ConnectionString ?? throw new ArgumentNullException(nameof(_settings.ConnectionString)));
         _subscriptionsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
 
         DoConsume();
@@ -54,6 +55,9 @@ public class RedisEventBus : IEventBus, IDisposable
         where TEventHandler : IEventHandler<TEvent>
     {
         _subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
+
+        if (!_redis.GetDatabase().ListRange(_settings.ListKey_Keys).Contains(_settings.ListKey_Channel))
+            _redis.GetDatabase().ListRightPush(_settings.ListKey_Keys, _settings.ListKey_Channel);
     }
 
     /// <summary>
@@ -71,21 +75,25 @@ public class RedisEventBus : IEventBus, IDisposable
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
-    /// <param name="event"></param>
+    /// <param name="eventData"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent @event,
+        TEvent eventData,
         CancellationToken cancellationToken = default)
     {
-        var length = await _redis.GetDatabase().ListRightPushAsync(_settings.ListKey,
-            JsonSerializer.Serialize(new EventWrapper
-            {
-                Name = _subscriptionsManager.GetEventKey<TEvent>(),
-                Message = JsonSerializer.Serialize(@event),
-            }));
+        var keys = await _redis.GetDatabase().ListRangeAsync(_settings.ListKey_Keys);
+        foreach (var item in keys)
+        {
+            var length = await _redis.GetDatabase().ListRightPushAsync((string)item!,
+                JsonSerializer.Serialize(new EventWrapper
+                {
+                    Name = _subscriptionsManager.GetEventKey<TEvent>(),
+                    Message = JsonSerializer.Serialize(eventData),
+                }));
 
-        _logger.LogInformation($"Publish event success,list length:{length}");
+            _logger.LogInformation($"Publish event success,list length:{length}");
+        }
 
         if (task == null)
             DoConsume();
@@ -104,8 +112,8 @@ public class RedisEventBus : IEventBus, IDisposable
         task = null;
     }
 
-    CancellationTokenSource tokenSource;
-    Task task;
+    CancellationTokenSource? tokenSource;
+    Task? task;
     void DoConsume()
     {
         tokenSource = new CancellationTokenSource();
@@ -115,11 +123,12 @@ public class RedisEventBus : IEventBus, IDisposable
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                EventWrapper result = default;
+                EventWrapper? result = default;
                 try
                 {
-                    var value = (string)await _redis.GetDatabase().ListLeftPopAsync(_settings.ListKey);
-                    if (value == null)
+
+                    var value = (string)(await _redis.GetDatabase().ListLeftPopAsync(_settings.ListKey_Channel))!;
+                    if (value is null)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(1));
                         continue;
@@ -133,11 +142,11 @@ public class RedisEventBus : IEventBus, IDisposable
                     continue;
                 }
 
-                _logger.LogInformation($"Consume message '{result.Name}:{result.Message}'.");
+                _logger.LogInformation($"Consume message '{result?.Name}:{result?.Message}'.");
 
-                var eventName = result.Name;
-                var eventMessage = result.Message;
-                await ProcessEventAsync(eventName, eventMessage);
+                var eventName = result!.Name;
+                var eventMessage = result!.Message;
+                await ProcessEventAsync(eventName!, eventMessage!);
             }
         }, tokenSource.Token);
     }
@@ -147,7 +156,10 @@ public class RedisEventBus : IEventBus, IDisposable
             return;
 
         var eventType = _subscriptionsManager.GetEventType(eventName);
-        var @event = JsonSerializer.Deserialize(eventMessage, eventType);
+        if (eventType is null)
+            return;
+
+        var eventData = JsonSerializer.Deserialize(eventMessage, eventType);
         var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 
         var handlerTypes = _subscriptionsManager.GetEventHandlerTypes(eventName);
@@ -157,7 +169,7 @@ public class RedisEventBus : IEventBus, IDisposable
             try
             {
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                await (Task)handlerMethod.Invoke(handler, new[] { eventData });
                 _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
@@ -170,6 +182,7 @@ public class RedisEventBus : IEventBus, IDisposable
     {
         if (_subscriptionsManager.IsEmpty)
         {
+            _redis.GetDatabase().ListRemove(_settings.ListKey_Keys, _settings.ListKey_Channel);
             task?.Dispose();
             task = null;
         }
@@ -177,7 +190,7 @@ public class RedisEventBus : IEventBus, IDisposable
 
     class EventWrapper
     {
-        public string Name { get; set; }
-        public string Message { get; set; }
+        public string? Name { get; set; }
+        public string? Message { get; set; }
     }
 }

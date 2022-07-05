@@ -15,7 +15,7 @@ public class SimulationEventBus : IEventBus, IDisposable
 {
     readonly ILogger<SimulationEventBus> _logger;
     readonly ISubscriptionsManager _subscriptionsManager;
-    readonly ISimulationEventQueue _eventStore;
+    readonly ISimulationEventQueue _eventQueue;
     readonly IServiceProvider _serviceProvider;
 
     /// <summary>
@@ -23,17 +23,17 @@ public class SimulationEventBus : IEventBus, IDisposable
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="subscriptionsManager"></param>
-    /// <param name="eventStore"></param>
+    /// <param name="eventQueue"></param>
     /// <param name="serviceProvider"></param>
     public SimulationEventBus(
         ILogger<SimulationEventBus> logger,
         ISubscriptionsManager subscriptionsManager,
-        ISimulationEventQueue eventStore,
+        ISimulationEventQueue eventQueue,
         IServiceProvider serviceProvider)
     {
         _logger = logger;
         _subscriptionsManager = subscriptionsManager ?? new InMemorySubscriptionsManager();
-        _eventStore = eventStore;
+        _eventQueue = eventQueue;
         _serviceProvider = serviceProvider;
         _subscriptionsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
 
@@ -49,6 +49,8 @@ public class SimulationEventBus : IEventBus, IDisposable
         where TEventHandler : IEventHandler<TEvent>
     {
         _subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
+
+        _eventQueue.AddChannel();
     }
 
     /// <summary>
@@ -66,17 +68,17 @@ public class SimulationEventBus : IEventBus, IDisposable
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
-    /// <param name="event"></param>
+    /// <param name="eventData"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent @event,
+        TEvent eventData,
         CancellationToken cancellationToken = default)
     {
-        var result = await _eventStore.PushAsync(new SimulationEvent
+        var result = await _eventQueue.PushAsync(new SimulationEvent
         {
             Name = _subscriptionsManager.GetEventKey<TEvent>(),
-            EventData = JsonSerializer.Serialize(@event),
+            EventData = JsonSerializer.Serialize(eventData),
         });
 
         _logger.LogInformation($"Publish event {(result ? "success" : "failed")}");
@@ -98,8 +100,8 @@ public class SimulationEventBus : IEventBus, IDisposable
         task = null;
     }
 
-    CancellationTokenSource tokenSource;
-    Task task;
+    CancellationTokenSource? tokenSource;
+    Task? task;
     void DoConsume()
     {
         tokenSource = new CancellationTokenSource();
@@ -109,10 +111,10 @@ public class SimulationEventBus : IEventBus, IDisposable
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                SimulationEvent result = default;
+                SimulationEvent? result = default;
                 try
                 {
-                    result = await _eventStore.PopAsync();
+                    result = await _eventQueue.PopAsync();
                     if (result is null)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(1));
@@ -125,11 +127,11 @@ public class SimulationEventBus : IEventBus, IDisposable
                     continue;
                 }
 
-                _logger.LogInformation($"Consume message '{result.Name}:{result.EventData}'.");
+                _logger.LogInformation($"Consume message '{result?.Name}:{result?.EventData}'.");
 
-                var eventName = result.Name;
-                var eventMessage = result.EventData;
-                await ProcessEventAsync(eventName, eventMessage);
+                var eventName = result!.Name;
+                var eventMessage = result!.EventData;
+                await ProcessEventAsync(eventName!, eventMessage!);
             }
         }, tokenSource.Token);
     }
@@ -139,7 +141,10 @@ public class SimulationEventBus : IEventBus, IDisposable
             return;
 
         var eventType = _subscriptionsManager.GetEventType(eventName);
-        var @event = JsonSerializer.Deserialize(eventMessage, eventType);
+        if (eventType is null)
+            return;
+
+        var eventData = JsonSerializer.Deserialize(eventMessage, eventType);
         var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
 
         var handlerTypes = _subscriptionsManager.GetEventHandlerTypes(eventName);
@@ -149,7 +154,7 @@ public class SimulationEventBus : IEventBus, IDisposable
             try
             {
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { @event });
+                await (Task)handlerMethod.Invoke(handler, new[] { eventData });
                 _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
@@ -162,6 +167,7 @@ public class SimulationEventBus : IEventBus, IDisposable
     {
         if (_subscriptionsManager.IsEmpty)
         {
+            _eventQueue.RemoveChannel();
             task?.Dispose();
             task = null;
         }

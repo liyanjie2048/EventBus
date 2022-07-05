@@ -22,7 +22,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
     readonly RabbitMQSettings _settings;
     readonly object sync_root = new();
 
-    IConnection connection;
+    IConnection? connection;
     bool disposed;
 
     /// <summary>
@@ -41,7 +41,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
     /// <summary>
     /// 
     /// </summary>
-    public bool IsConnected => connection != null && connection.IsOpen && !disposed;
+    public bool IsConnected => connection is not null && connection.IsOpen && !disposed;
 
     /// <summary>
     /// 
@@ -50,7 +50,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
     public IModel CreateModel()
     {
         return IsConnected
-            ? connection.CreateModel()
+            ? connection!.CreateModel()
             : throw new InvalidOperationException("No RabbitMQ connections are available to perform this action");
     }
 
@@ -66,7 +66,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
 
         try
         {
-            connection.Dispose();
+            connection?.Dispose();
         }
         catch (IOException ex)
         {
@@ -93,14 +93,14 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
                 })
                 .Execute(() =>
                 {
-                    connection = _settings.Connection.CreateConnection();
+                    connection = (_settings.Connection ?? throw new ArgumentNullException(nameof(_settings.Connection))).CreateConnection();
                 });
 
             if (IsConnected)
             {
-                connection.ConnectionShutdown += OnConnectionShutdown;
-                connection.CallbackException += OnCallbackException;
-                connection.ConnectionBlocked += OnConnectionBlocked;
+                connection!.ConnectionShutdown += OnConnectionShutdown;
+                connection!.CallbackException += OnCallbackException;
+                connection!.ConnectionBlocked += OnConnectionBlocked;
 
                 _logger.LogInformation($"RabbitMQ persistent connection acquired a connection {connection.Endpoint.HostName} and is subscribed to failure events");
 

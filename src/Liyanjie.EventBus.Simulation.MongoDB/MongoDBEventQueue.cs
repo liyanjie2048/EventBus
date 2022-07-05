@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.Options;
 
 using MongoDB.Driver;
 
@@ -9,31 +12,34 @@ namespace Liyanjie.EventBus;
 /// </summary>
 public class MongoDBEventQueue : ISimulationEventQueue
 {
-    readonly MongoDBContext context;
+    readonly MongoDBSettings _settings;
+    readonly MongoDBContext _context;
 
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="options"></param>
     /// <param name="context"></param>
-    public MongoDBEventQueue(MongoDBContext context)
+    public MongoDBEventQueue(
+        IOptions<MongoDBSettings> options,
+        MongoDBContext context)
     {
-        this.context = context;
+        _settings = options.Value;
+        _context = context;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public async Task<SimulationEvent> PopAsync()
+    public void AddChannel()
     {
-        var @event = await context.Events
-            .Find(Builders<MongoDBEvent>.Filter.Where(_ => _.IsHandled == false))
-            .SortBy(_ => _.Id)
-            .FirstOrDefaultAsync();
-        return @event == null
-            ? @event
-            : await context.Events.FindOneAndUpdateAsync(_ => _.Id == @event.Id, Builders<MongoDBEvent>.Update
-                .Set(_ => _.IsHandled, true));
+        _context.Database.GetCollection<string>(_settings.StoreKey_Keys)
+            .ReplaceOne(_ => _ == _settings.StoreKey_Channel,
+                _settings.StoreKey_Channel,
+                new ReplaceOptions() { IsUpsert = true });
+    }
+
+    public void RemoveChannel()
+    {
+        _context.Database.GetCollection<string>(_settings.StoreKey_Keys)
+            .DeleteOne(_ => _ == _settings.StoreKey_Channel);
     }
 
     /// <summary>
@@ -43,19 +49,39 @@ public class MongoDBEventQueue : ISimulationEventQueue
     /// <returns></returns>
     public async Task<bool> PushAsync(SimulationEvent @event)
     {
-        try
+        var channels = await _context.Database.GetCollection<string>(_settings.StoreKey_Keys).AsQueryable()
+            .ToListAsync();
+        var collectionNames = await _context.Database.ListCollectionNames().ToListAsync();
+        foreach (var item in channels)
         {
-            await context.Events.InsertOneAsync(new MongoDBEvent
+            var isNewCollection = !collectionNames.Contains(item);
+            await _context.Database.GetCollection<MongoDBEvent>(item)
+                .InsertOneAsync(new()
+                {
+                    Name = @event.Name,
+                    EventData = @event.EventData,
+                });
+            if (isNewCollection)
             {
-                Name = @event.Name,
-                EventData = @event.EventData,
-            });
+                _context.Database.GetCollection<MongoDBEvent>(item).Indexes
+                    .CreateOne(new CreateIndexModel<MongoDBEvent>(Builders<MongoDBEvent>.IndexKeys.Ascending(_ => _.Id)));
+            }
+        }
 
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return true;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public async Task<SimulationEvent?> PopAsync()
+    {
+        return await _context.Database.GetCollection<MongoDBEvent>(_settings.StoreKey_Channel)
+            .FindOneAndDeleteAsync<MongoDBEvent>(Builders<MongoDBEvent>.Filter.Empty,
+                new FindOneAndDeleteOptions<MongoDBEvent, MongoDBEvent>
+                {
+                    Sort = Builders<MongoDBEvent>.Sort.Ascending(_ => _.Id),
+                });
     }
 }

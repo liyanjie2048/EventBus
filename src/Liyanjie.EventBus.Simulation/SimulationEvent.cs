@@ -8,10 +8,10 @@ public class SimulationEvent
     /// <summary>
     /// 
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    public string EventData { get; set; }
+    public string? EventData { get; set; }
 }

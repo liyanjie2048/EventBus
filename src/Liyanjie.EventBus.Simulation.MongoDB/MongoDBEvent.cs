@@ -11,9 +11,4 @@ public class MongoDBEvent : SimulationEvent
     /// 
     /// </summary>
     public long Id { get; set; } = DateTime.UtcNow.Ticks;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public bool IsHandled { get; set; }
 }

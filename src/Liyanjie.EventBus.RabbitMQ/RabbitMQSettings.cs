@@ -15,7 +15,7 @@ public class RabbitMQSettings
     /// <summary>
     /// 
     /// </summary>
-    public ConnectionFactory Connection { get; set; }
+    public ConnectionFactory? Connection { get; set; }
 
     /// <summary>
     /// 
@@ -25,5 +25,5 @@ public class RabbitMQSettings
     /// <summary>
     /// 
     /// </summary>
-    public string QueueName { get; set; }
+    public string QueueName { get; set; } = "Default";
 }
