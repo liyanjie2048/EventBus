@@ -72,17 +72,17 @@ public class RabbitMQEventBus : IEventBus, IDisposable
         where TEventHandler : IEventHandler<TEvent>
     {
         var eventName = _subscriptionsManager.GetEventKey<TEvent>();
-        if (_subscriptionsManager.HasSubscriptions(eventName))
-            return;
+        if (!_subscriptionsManager.HasSubscriptions(eventName))
+        {
+            if (!_connection.IsConnected)
+                _connection.TryConnect();
 
-        if (!_connection.IsConnected)
-            _connection.TryConnect();
-
-        using var model = _connection.CreateModel();
-        model.QueueBind(
-            queue: _settings.QueueName,
-            exchange: BROKER_NAME,
-            routingKey: eventName);
+            using var model = _connection.CreateModel();
+            model.QueueBind(
+                queue: _settings.QueueName,
+                exchange: BROKER_NAME,
+                routingKey: eventName);
+        }
 
         _subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
     }
