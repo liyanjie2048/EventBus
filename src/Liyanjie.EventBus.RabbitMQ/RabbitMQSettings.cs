@@ -15,7 +15,7 @@ public class RabbitMQSettings
     /// <summary>
     /// 
     /// </summary>
-    public ConnectionFactory? Connection { get; set; }
+    public ConnectionFactory? ConnectionFactory { get; set; }
 
     /// <summary>
     /// 

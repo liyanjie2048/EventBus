@@ -88,7 +88,7 @@ public class RedisEventBus : IEventBus, IDisposable
             var length = await _redis.GetDatabase().ListRightPushAsync((string)item!,
                 JsonSerializer.Serialize(new EventWrapper
                 {
-                    Name = _subscriptionsManager.GetEventKey<TEvent>(),
+                    Name = _subscriptionsManager.GetEventName<TEvent>(),
                     Message = JsonSerializer.Serialize(eventData),
                 }));
 
@@ -152,14 +152,14 @@ public class RedisEventBus : IEventBus, IDisposable
     }
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
-        if (!_subscriptionsManager.HasSubscriptions(eventName))
+        if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
             return;
 
-        using var scope = _serviceProvider.CreateScope();
         foreach (var (handlerType, eventType) in _subscriptionsManager.GetEventHandlerTypes(eventName))
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
                 await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });

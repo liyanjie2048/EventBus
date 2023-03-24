@@ -39,14 +39,14 @@ public interface ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    bool HasSubscriptions(string eventName);
+    bool HasSubscriptionsForEvent(string eventName);
 
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    string GetEventKey<TEvent>();
+    string GetEventName<TEvent>();
 
     /// <summary>
     /// 

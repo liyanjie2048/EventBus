@@ -71,17 +71,27 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     public void RegisterEventHandler<TEvent, TEventHandler>()
         where TEventHandler : IEventHandler<TEvent>
     {
-        var eventName = _subscriptionsManager.GetEventKey<TEvent>();
-        if (!_subscriptionsManager.HasSubscriptions(eventName))
+        var eventName = _subscriptionsManager.GetEventName<TEvent>();
+        if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
         {
             if (!_connection.IsConnected)
                 _connection.TryConnect();
 
-            using var model = _connection.CreateModel();
-            model.QueueBind(
+            var model = _connection.CreateModel();
+            //model.ExchangeDeclareNoWait(
+            //    exchange: BROKER_NAME,
+            //    type: ExchangeType.Direct);
+            //model.QueueDeclareNoWait(
+            //    queue: _settings.QueueName,
+            //    durable: true,
+            //    exclusive: false,
+            //    autoDelete: false,
+            //    arguments: null);
+            model.QueueBindNoWait(
                 queue: _settings.QueueName,
                 exchange: BROKER_NAME,
-                routingKey: eventName);
+                routingKey: eventName,
+                arguments: null);
         }
 
         _subscriptionsManager.AddSubscription<TEvent, TEventHandler>();
@@ -115,12 +125,14 @@ public class RabbitMQEventBus : IEventBus, IDisposable
         if (!_connection.IsConnected)
             _connection.TryConnect();
 
-        var eventName = eventData.GetType().Name;
+        var eventName = _subscriptionsManager.GetEventName<TEvent>();
         var eventMessage = JsonSerializer.Serialize(eventData);
         var body = Encoding.UTF8.GetBytes(eventMessage);
 
-        using var model = _connection.CreateModel();
-        model.ExchangeDeclare(exchange: BROKER_NAME, type: ExchangeType.Direct);
+        var model = _connection.CreateModel();
+        model.ExchangeDeclareNoWait(
+            exchange: BROKER_NAME,
+            type: ExchangeType.Direct);
 
         _policy.Execute(() =>
         {
@@ -157,21 +169,21 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             _connection.TryConnect();
 
         consumerModel = _connection.CreateModel();
-        consumerModel.ExchangeDeclare(exchange: BROKER_NAME, type: ExchangeType.Direct);
-        consumerModel.QueueDeclare(
+        consumerModel.ExchangeDeclareNoWait(exchange: BROKER_NAME, type: ExchangeType.Direct);
+        consumerModel.QueueDeclareNoWait(
             queue: _settings.QueueName,
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: null);
 
-        var consumer = new EventingBasicConsumer(consumerModel);
+        var consumer = new AsyncEventingBasicConsumer(consumerModel);
         consumer.Received += async (obj, e) =>
         {
             consumerModel.BasicAck(e.DeliveryTag, false);
 
             var eventName = e.RoutingKey;
-            var eventMessage = Encoding.UTF8.GetString(e.Body.ToArray());
+            var eventMessage = Encoding.UTF8.GetString(e.Body.Span);
             await ProcessEventAsync(eventName, eventMessage);
         };
 
@@ -187,14 +199,14 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     }
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
-        if (!_subscriptionsManager.HasSubscriptions(eventName))
+        if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
             return;
 
-        using var scope = _serviceProvider.CreateScope();
         foreach (var (handlerType, eventType) in _subscriptionsManager.GetEventHandlerTypes(eventName))
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
                 await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });
@@ -211,7 +223,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
         if (!_connection.IsConnected)
             _connection.TryConnect();
 
-        using var model = _connection.CreateModel();
+        var model = _connection.CreateModel();
         model.QueueUnbind(
             queue: _settings.QueueName,
             exchange: BROKER_NAME,

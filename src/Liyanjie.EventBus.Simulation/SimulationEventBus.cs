@@ -77,7 +77,7 @@ public class SimulationEventBus : IEventBus, IDisposable
     {
         var result = await _eventQueue.PushAsync(new SimulationEvent
         {
-            Name = _subscriptionsManager.GetEventKey<TEvent>(),
+            Name = _subscriptionsManager.GetEventName<TEvent>(),
             EventData = JsonSerializer.Serialize(eventData),
         });
 
@@ -137,14 +137,14 @@ public class SimulationEventBus : IEventBus, IDisposable
     }
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
-        if (!_subscriptionsManager.HasSubscriptions(eventName))
+        if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
             return;
 
-        using var scope = _serviceProvider.CreateScope();
         foreach (var (handlerType, eventType) in _subscriptionsManager.GetEventHandlerTypes(eventName))
         {
             try
             {
+                using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
                 await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });

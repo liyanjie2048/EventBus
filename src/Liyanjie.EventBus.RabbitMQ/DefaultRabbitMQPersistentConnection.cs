@@ -23,6 +23,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
     readonly object sync_root = new();
 
     IConnection? connection;
+    IModel? model;
     bool disposed;
 
     /// <summary>
@@ -50,7 +51,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
     public IModel CreateModel()
     {
         return IsConnected
-            ? connection!.CreateModel()
+            ? model ??= connection!.CreateModel()
             : throw new InvalidOperationException("No RabbitMQ connections are available to perform this action");
     }
 
@@ -93,7 +94,7 @@ public class DefaultRabbitMQPersistentConnection : IRabbitMQPersistentConnection
                 })
                 .Execute(() =>
                 {
-                    connection = (_settings.Connection ?? throw new ArgumentNullException(nameof(_settings.Connection))).CreateConnection();
+                    connection = (_settings.ConnectionFactory ?? throw new ArgumentNullException(nameof(_settings.ConnectionFactory))).CreateConnection();
                 });
 
             if (IsConnected)

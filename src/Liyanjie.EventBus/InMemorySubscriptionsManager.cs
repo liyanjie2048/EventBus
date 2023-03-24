@@ -29,11 +29,11 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     public void AddSubscription<TEvent, TEventHandler>()
         where TEventHandler : IEventHandler<TEvent>
     {
-        var eventName = GetEventKey<TEvent>();
+        var eventName = GetEventName<TEvent>();
 
         var handlerType = typeof(TEventHandler);
         var eventType = typeof(TEvent);
-        if (!HasSubscriptions(eventName))
+        if (!HasSubscriptionsForEvent(eventName))
             _handlers.Add(eventName, new());
 
         if (_handlers[eventName].Any(_ => _.HandlerType == handlerType))
@@ -50,8 +50,8 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     public void RemoveSubscription<TEvent, TEventHandler>()
         where TEventHandler : IEventHandler<TEvent>
     {
-        var eventName = GetEventKey<TEvent>();
-        if (!HasSubscriptions(eventName))
+        var eventName = GetEventName<TEvent>();
+        if (!HasSubscriptionsForEvent(eventName))
             return;
 
         var handlerType = typeof(TEventHandler);
@@ -72,7 +72,7 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    public bool HasSubscriptions(string eventName) => _handlers.ContainsKey(eventName);
+    public bool HasSubscriptionsForEvent(string eventName) => _handlers.ContainsKey(eventName);
 
     /// <summary>
     /// 
@@ -92,7 +92,7 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    public string GetEventKey<TEvent>() => typeof(TEvent).Name;
+    public string GetEventName<TEvent>() => typeof(TEvent).Name;
 
     /// <summary>
     /// 
