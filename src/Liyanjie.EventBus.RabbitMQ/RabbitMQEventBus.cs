@@ -206,7 +206,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             {
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 await (Task)handlerMethod.Invoke(handler, new[] { @event });
-                _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
             {
