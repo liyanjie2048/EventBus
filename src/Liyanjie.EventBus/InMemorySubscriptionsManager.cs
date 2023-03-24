@@ -9,18 +9,17 @@ namespace Liyanjie.EventBus;
 /// </summary>
 public class InMemorySubscriptionsManager : ISubscriptionsManager
 {
-    readonly Dictionary<string, Type> _eventTypes = new();
-    readonly Dictionary<string, List<Type>> _eventHandlers = new();
+    readonly Dictionary<string, List<(Type HandlerType, Type EventType)>> _handlers = new();
 
     /// <summary>
     /// 
     /// </summary>
-    public bool IsEmpty => !_eventHandlers.Keys.Any();
+    public bool IsEmpty => !_handlers.Keys.Any();
 
     /// <summary>
     /// 
     /// </summary>
-    public void Clear() => _eventHandlers.Clear();
+    public void Clear() => _handlers.Clear();
 
     /// <summary>
     /// 
@@ -31,16 +30,16 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
         where TEventHandler : IEventHandler<TEvent>
     {
         var eventName = GetEventKey<TEvent>();
-        _eventTypes[eventName] = typeof(TEvent);
 
         var handlerType = typeof(TEventHandler);
+        var eventType = typeof(TEvent);
         if (!HasSubscriptions(eventName))
-            _eventHandlers.Add(eventName, new List<Type>());
+            _handlers.Add(eventName, new());
 
-        if (_eventHandlers[eventName].Any(_ => _ == handlerType))
+        if (_handlers[eventName].Any(_ => _.HandlerType == handlerType))
             throw new ArgumentException($"Handler type {handlerType.Name} already registered for '{eventName}'", nameof(handlerType));
 
-        _eventHandlers[eventName].Add(handlerType);
+        _handlers[eventName].Add((handlerType, eventType));
     }
 
     /// <summary>
@@ -56,16 +55,14 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
             return;
 
         var handlerType = typeof(TEventHandler);
-        var eventHandler = _eventHandlers[eventName].SingleOrDefault(_ => _ == handlerType);
-        if (eventHandler == null)
+        var eventHandler = _handlers[eventName].SingleOrDefault(_ => _.HandlerType == handlerType);
+        if (eventHandler == default)
             return;
 
-        _eventHandlers[eventName].Remove(eventHandler);
-        if (!_eventHandlers[eventName].Any())
+        _handlers[eventName].Remove(eventHandler);
+        if (!_handlers[eventName].Any())
         {
-            _eventHandlers.Remove(eventName);
-            _eventTypes.Remove(eventName);
-
+            _handlers.Remove(eventName);
             OnEventRemoved?.Invoke(this, eventName);
         }
     }
@@ -75,38 +72,27 @@ public class InMemorySubscriptionsManager : ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    public bool HasSubscriptions(string eventName) => _eventHandlers.ContainsKey(eventName);
+    public bool HasSubscriptions(string eventName) => _handlers.ContainsKey(eventName);
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<string> GetEventNames() => _eventTypes.Keys;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="eventName"></param>
-    /// <returns></returns>
-    public IEnumerable<Type> GetEventHandlerTypes(string eventName) => _eventHandlers[eventName];
+    public IEnumerable<string> GetEventNames() => _handlers.Keys;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    public Type? GetEventType(string eventName)
-        => _eventTypes.TryGetValue(eventName, out var type) ? type : null;
+    public IEnumerable<(Type HandlerType, Type EventType)> GetEventHandlerTypes(string eventName) => _handlers[eventName];
 
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    public string GetEventKey<TEvent>()
-    {
-        return typeof(TEvent).Name;
-    }
+    public string GetEventKey<TEvent>() => typeof(TEvent).Name;
 
     /// <summary>
     /// 

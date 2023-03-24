@@ -155,22 +155,15 @@ public class RedisEventBus : IEventBus, IDisposable
         if (!_subscriptionsManager.HasSubscriptions(eventName))
             return;
 
-        var eventType = _subscriptionsManager.GetEventType(eventName);
-        if (eventType is null)
-            return;
-
-        var eventData = JsonSerializer.Deserialize(eventMessage, eventType);
-        var handlerMethod = typeof(IEventHandler<>).MakeGenericType(eventType).GetMethod(nameof(IEventHandler<object>.HandleAsync));
-
-        var handlerTypes = _subscriptionsManager.GetEventHandlerTypes(eventName);
         using var scope = _serviceProvider.CreateScope();
-        foreach (var handlerType in handlerTypes)
+        foreach (var (handlerType, eventType) in _subscriptionsManager.GetEventHandlerTypes(eventName))
         {
             try
             {
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
-                await (Task)handlerMethod.Invoke(handler, new[] { eventData });
-                _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
+                await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });
+                _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
             {

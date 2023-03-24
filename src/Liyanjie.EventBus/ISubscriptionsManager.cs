@@ -51,13 +51,6 @@ public interface ISubscriptionsManager
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="eventName"></param>
-    /// <returns></returns>
-    Type? GetEventType(string eventName);
-
-    /// <summary>
-    /// 
-    /// </summary>
     /// <returns></returns>
     IEnumerable<string> GetEventNames();
 
@@ -66,7 +59,7 @@ public interface ISubscriptionsManager
     /// </summary>
     /// <param name="eventName"></param>
     /// <returns></returns>
-    IEnumerable<Type> GetEventHandlerTypes(string eventName);
+    IEnumerable<(Type HandlerType, Type EventType)> GetEventHandlerTypes(string eventName);
 
     /// <summary>
     /// 
