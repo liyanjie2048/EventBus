@@ -1,17 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Net.Sockets;
-
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using Polly;
-
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using RabbitMQ.Client.Exceptions;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

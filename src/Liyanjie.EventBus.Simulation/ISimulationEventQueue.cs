@@ -1,26 +1,23 @@
-﻿using System.Threading.Tasks;
+﻿namespace Liyanjie.EventBus;
 
-namespace Liyanjie.EventBus
+/// <summary>
+/// 
+/// </summary>
+public interface ISimulationEventQueue
 {
+    void AddChannel();
+    void RemoveChannel();
+
     /// <summary>
     /// 
     /// </summary>
-    public interface ISimulationEventQueue
-    {
-        void AddChannel();
-        void RemoveChannel();
+    /// <param name="event"></param>
+    /// <returns></returns>
+    Task<bool> PushAsync(SimulationEvent @event);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        Task<bool> PushAsync(SimulationEvent @event);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        Task<SimulationEvent?> PopAsync();
-    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    Task<SimulationEvent?> PopAsync();
 }

@@ -1,8 +1,4 @@
-﻿using System;
-
-using RabbitMQ.Client;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

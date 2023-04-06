@@ -1,7 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

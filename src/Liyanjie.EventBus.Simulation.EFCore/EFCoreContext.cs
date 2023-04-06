@@ -1,7 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

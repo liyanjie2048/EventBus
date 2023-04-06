@@ -1,26 +1,23 @@
-﻿using MongoDB.Driver;
+﻿namespace Liyanjie.EventBus;
 
-namespace Liyanjie.EventBus
+/// <summary>
+/// 
+/// </summary>
+public class MongoDBContext
 {
+    readonly IMongoClient _client;
+    readonly IMongoDatabase _database;
+
     /// <summary>
     /// 
     /// </summary>
-    public class MongoDBContext
+    /// <param name="connectionString"></param>
+    public MongoDBContext(string connectionString)
     {
-        readonly IMongoClient _client;
-        readonly IMongoDatabase _database;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="connectionString"></param>
-        public MongoDBContext(string connectionString)
-        {
-            var mongoUrl = new MongoUrlBuilder(connectionString).ToMongoUrl();
-            _client = new MongoClient(mongoUrl);
-            _database = _client.GetDatabase(mongoUrl.DatabaseName);
-        }
-
-        internal IMongoDatabase Database => _database;
+        var mongoUrl = new MongoUrlBuilder(connectionString).ToMongoUrl();
+        _client = new MongoClient(mongoUrl);
+        _database = _client.GetDatabase(mongoUrl.DatabaseName);
     }
+
+    internal IMongoDatabase Database => _database;
 }

@@ -1,21 +1,4 @@
-﻿using System;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using Polly;
-
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using RabbitMQ.Client.Exceptions;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 
@@ -30,6 +13,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     readonly IServiceProvider _serviceProvider;
     readonly IRabbitMQPersistentConnection _connection;
     readonly Policy _policy;
+    readonly CancellationTokenSource _cancellationTokenSource = new();
 
     /// <summary>
     /// 
@@ -159,7 +143,10 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     public void Dispose()
     {
         consumerModel?.Dispose();
+        _connection?.Dispose();
         _subscriptionsManager.Clear();
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
     }
 
     IModel? consumerModel;
@@ -209,7 +196,11 @@ public class RabbitMQEventBus : IEventBus, IDisposable
                 using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
-                await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });
+                await (Task)handleAsync.Invoke(handler, new[]
+                {
+                    JsonSerializer.Deserialize(eventMessage, eventType),
+                    _cancellationTokenSource.Token,
+                });
                 _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)

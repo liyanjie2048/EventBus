@@ -1,16 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using StackExchange.Redis;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 
@@ -106,8 +94,8 @@ public class RedisEventBus : IEventBus, IDisposable
     /// </summary>
     public void Dispose()
     {
-        tokenSource?.Cancel();
         _subscriptionsManager.Clear();
+        tokenSource?.Cancel();
         task?.Dispose();
         task = null;
     }
@@ -162,7 +150,11 @@ public class RedisEventBus : IEventBus, IDisposable
                 using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
-                await (Task)handleAsync.Invoke(handler, new[] { JsonSerializer.Deserialize(eventMessage, eventType) });
+                await (Task)handleAsync.Invoke(handler, new[]
+                {
+                    JsonSerializer.Deserialize(eventMessage, eventType),
+                    tokenSource?.Token,
+                });
                 _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)

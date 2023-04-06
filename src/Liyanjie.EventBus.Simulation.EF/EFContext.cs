@@ -1,6 +1,4 @@
-﻿using System.Data.Entity;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

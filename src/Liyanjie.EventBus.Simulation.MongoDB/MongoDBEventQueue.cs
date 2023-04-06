@@ -1,11 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-
-using Microsoft.Extensions.Options;
-
-using MongoDB.Driver;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 

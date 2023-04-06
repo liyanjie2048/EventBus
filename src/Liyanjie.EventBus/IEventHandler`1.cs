@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 
@@ -12,6 +10,7 @@ public interface IEventHandler<in TEvent>
     /// 
     /// </summary>
     /// <param name="eventData"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task HandleAsync(TEvent eventData);
+    Task HandleAsync(TEvent eventData, CancellationToken? cancellationToken = default);
 }
