@@ -12,5 +12,5 @@ public interface IEventHandler<in TEvent>
     /// <param name="eventData"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task HandleAsync(TEvent eventData, CancellationToken? cancellationToken = default);
+    Task HandleAsync(TEvent eventData, CancellationToken cancellationToken = default);
 }
