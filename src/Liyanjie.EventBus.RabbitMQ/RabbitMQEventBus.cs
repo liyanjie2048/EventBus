@@ -97,11 +97,8 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <param name="eventData"></param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent eventData,
-        CancellationToken cancellationToken = default)
+    public async Task<bool> PublishEventAsync<TEvent>(TEvent eventData)
     {
         if (eventData is null)
             return false;
@@ -205,7 +202,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{ex.Message} in {handlerType.FullName}=>{eventMessage}");
+                _logger.LogError(ex, $"ERROR at {handlerType.FullName}=>{eventMessage}");
             }
         }
     }

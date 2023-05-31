@@ -26,7 +26,6 @@ public interface IEventBus
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <param name="event"></param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task<bool> PublishEventAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default);
+    Task<bool> PublishEventAsync<TEvent>(TEvent @event);
 }

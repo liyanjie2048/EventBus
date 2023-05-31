@@ -68,18 +68,15 @@ public class KafkaEventBus : IEventBus, IDisposable
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <param name="eventData"></param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent eventData,
-        CancellationToken cancellationToken = default)
+    public async Task<bool> PublishEventAsync<TEvent>(TEvent eventData)
     {
         using var producer = new ProducerBuilder<Guid, string>(_settings.ProducerConfig ?? throw new ArgumentNullException(nameof(_settings.ProducerConfig))).Build();
         var result = await _policy.ExecuteAsync(async () => await producer.ProduceAsync(GetTopic<TEvent>(), new Message<Guid, string>
         {
             Key = Guid.NewGuid(),
             Value = JsonSerializer.Serialize(eventData),
-        }, cancellationToken));
+        }));
         if (result.Status == PersistenceStatus.Persisted)
         {
             _logger.LogInformation($"Publish event success,status:{result.Status},offset:{result.Offset}");

@@ -61,11 +61,8 @@ public class SimulationEventBus : IEventBus, IDisposable
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <param name="eventData"></param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async Task<bool> PublishEventAsync<TEvent>(
-        TEvent eventData,
-        CancellationToken cancellationToken = default)
+    public async Task<bool> PublishEventAsync<TEvent>(TEvent eventData)
     {
         var result = await _eventQueue.PushAsync(new SimulationEvent
         {
