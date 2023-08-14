@@ -131,6 +131,8 @@ public class RabbitMQEventBus : IEventBus, IDisposable
         if (consumerModel?.IsClosed != true)
             DoConsume();
 
+        _logger.LogDebug($"Publish:{eventName}=>{eventMessage}");
+
         return await Task.FromResult(true);
     }
 
@@ -198,7 +200,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
                     JsonSerializer.Deserialize(eventMessage, eventType),
                     _cancellationTokenSource.Token,
                 });
-                _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
+                _logger.LogDebug($"Consume:{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
             {
