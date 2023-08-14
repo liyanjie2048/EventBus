@@ -1,11 +1,13 @@
-﻿namespace Liyanjie.EventBus;
+﻿using System.Linq;
+
+namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 
 /// </summary>
 public class RabbitMQEventBus : IEventBus, IDisposable
 {
-    const string BROKER_NAME = "event_bus";
+    const string BROKER_NAME = "Liyanjie_EventBus";
 
     readonly ILogger<RabbitMQEventBus> _logger;
     readonly RabbitMQSettings _settings;
@@ -170,6 +172,9 @@ public class RabbitMQEventBus : IEventBus, IDisposable
 
             var eventName = e.RoutingKey;
             var eventMessage = Encoding.UTF8.GetString(e.Body.Span);
+
+            _logger.LogDebug($"Received:{eventName}=>{eventMessage}");
+
             await ProcessEventAsync(eventName, eventMessage);
         };
 
@@ -186,9 +191,15 @@ public class RabbitMQEventBus : IEventBus, IDisposable
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
         if (!_subscriptionsManager.HasSubscriptionsForEvent(eventName))
+        {
+            _logger.LogDebug($"No consumer:{eventName}");
             return;
+        }
 
-        foreach (var (handlerType, eventType) in _subscriptionsManager.GetEventHandlerTypes(eventName))
+        var handlers = _subscriptionsManager.GetEventHandlerTypes(eventName);
+        _logger.LogDebug($"Consumers:{eventName}=>{handlers.Count()}");
+
+        foreach (var (handlerType, eventType) in handlers)
         {
             try
             {
