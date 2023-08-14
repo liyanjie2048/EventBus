@@ -198,7 +198,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
                     JsonSerializer.Deserialize(eventMessage, eventType),
                     _cancellationTokenSource.Token,
                 });
-                _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
+                _logger.LogDebug($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
             {
