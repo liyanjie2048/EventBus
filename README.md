@@ -1,6 +1,6 @@
 # EventBus
 
-事件总线
+浜嬩欢鎬荤嚎
 
 - #### Liyanjie.EventBus
   - IEventBus
