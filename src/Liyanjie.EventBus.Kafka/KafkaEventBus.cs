@@ -109,19 +109,17 @@ public class KafkaEventBus : IEventBus, IDisposable
     void DoConsume()
     {
         tokenSource = new CancellationTokenSource();
-        task = Task.Factory.StartNew(async token =>
+        task = Task.Factory.StartNew(async () =>
         {
-            var cancellationToken = (CancellationToken)token;
-
             using var consumer = new ConsumerBuilder<Guid, string>(_settings.ConsumerConfig ?? throw new ArgumentNullException(nameof(_settings.ConsumerConfig))).Build();
             consumer.Subscribe(_subscriptionsManager.GetEventNames());
 
-            while (!cancellationToken.IsCancellationRequested)
+            while (!tokenSource.IsCancellationRequested)
             {
                 ConsumeResult<Guid, string>? result = default;
                 try
                 {
-                    result = consumer.Consume(cancellationToken);
+                    result = consumer.Consume(tokenSource.Token);
                 }
                 catch (ConsumeException e)
                 {
@@ -135,7 +133,7 @@ public class KafkaEventBus : IEventBus, IDisposable
                 var eventMessage = result.Message.Value;
                 await ProcessEventAsync(eventName, eventMessage);
             }
-        }, tokenSource.Token);
+        });
     }
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
@@ -149,11 +147,13 @@ public class KafkaEventBus : IEventBus, IDisposable
                 using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
-                await (Task)handleAsync.Invoke(handler, new[]
-                {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                await (Task)handleAsync.Invoke(handler,
+                [
                     JsonSerializer.Deserialize(eventMessage, eventType),
                     tokenSource?.Token,
-                });
+                ])!;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
@@ -162,7 +162,7 @@ public class KafkaEventBus : IEventBus, IDisposable
             }
         }
     }
-    void SubscriptionsManager_OnEventRemoved(object sender, string eventName)
+    void SubscriptionsManager_OnEventRemoved(object? sender, string eventName)
     {
         if (_subscriptionsManager.IsEmpty)
         {

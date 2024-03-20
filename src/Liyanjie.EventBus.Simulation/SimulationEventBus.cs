@@ -94,11 +94,9 @@ public class SimulationEventBus : IEventBus, IDisposable
     void DoConsume()
     {
         tokenSource = new CancellationTokenSource();
-        task = Task.Factory.StartNew(async token =>
+        task = Task.Factory.StartNew(async () =>
         {
-            var cancellationToken = (CancellationToken)token;
-
-            while (!cancellationToken.IsCancellationRequested)
+            while (!tokenSource.IsCancellationRequested)
             {
                 SimulationEvent? result = default;
                 try
@@ -122,7 +120,7 @@ public class SimulationEventBus : IEventBus, IDisposable
                 var eventMessage = result!.EventData;
                 await ProcessEventAsync(eventName!, eventMessage!);
             }
-        }, tokenSource.Token);
+        });
     }
     async Task ProcessEventAsync(string eventName, string eventMessage)
     {
@@ -136,11 +134,13 @@ public class SimulationEventBus : IEventBus, IDisposable
                 using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
-                await (Task)handleAsync.Invoke(handler, new[]
-                {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                await (Task)handleAsync.Invoke(handler,
+                [
                     JsonSerializer.Deserialize(eventMessage, eventType),
                     tokenSource ?.Token,
-                });
+                ])!;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 _logger.LogTrace($"{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
@@ -149,7 +149,7 @@ public class SimulationEventBus : IEventBus, IDisposable
             }
         }
     }
-    void SubscriptionsManager_OnEventRemoved(object sender, string eventName)
+    void SubscriptionsManager_OnEventRemoved(object? sender, string eventName)
     {
         if (_subscriptionsManager.IsEmpty)
         {

@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace Liyanjie.EventBus;
+﻿namespace Liyanjie.EventBus;
 
 /// <summary>
 /// 
@@ -171,7 +169,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             consumerModel.BasicAck(e.DeliveryTag, false);
 
             var eventName = e.RoutingKey;
-            var eventMessage = Encoding.UTF8.GetString(e.Body.Span);
+            var eventMessage = Encoding.UTF8.GetString(e.Body.ToArray());
 
             _logger.LogDebug($"Received:{eventName}=>{eventMessage}");
 
@@ -206,11 +204,13 @@ public class RabbitMQEventBus : IEventBus, IDisposable
                 using var scope = _serviceProvider.CreateScope();
                 var handler = ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, handlerType);
                 var handleAsync = handler.GetType().GetMethod(nameof(IEventHandler<object>.HandleAsync));
-                await (Task)handleAsync.Invoke(handler, new[]
-                {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                await (Task)handleAsync.Invoke(handler,
+                [
                     JsonSerializer.Deserialize(eventMessage, eventType),
                     _cancellationTokenSource.Token,
-                });
+                ])!;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 _logger.LogDebug($"Consume:{handlerType.FullName}=>{eventMessage}");
             }
             catch (Exception ex)
@@ -219,7 +219,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             }
         }
     }
-    void SubscriptionsManager_OnEventRemoved(object sender, string eventName)
+    void SubscriptionsManager_OnEventRemoved(object? sender, string eventName)
     {
         if (!_connection.IsConnected)
             _connection.TryConnect();
