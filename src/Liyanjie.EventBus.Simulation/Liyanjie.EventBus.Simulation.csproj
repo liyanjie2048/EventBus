@@ -7,10 +7,10 @@
 		<VersionSuffix>240320</VersionSuffix>
         <Description>Liyanjie.EventBus.Simulation</Description>
         <Copyright>© Liyanjie.net</Copyright>
-        <Authors>liyanjie8712@outlook.com</Authors>
+        <Authors>liyanjie2048@outlook.com</Authors>
         <Company>Liyanjie.net</Company>
-        <RepositoryUrl>https://github.com/liyanjie8712/EventBus</RepositoryUrl>
-        <PackageProjectUrl>https://github.com/liyanjie8712/EventBus</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/liyanjie2048/EventBus</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/liyanjie2048/EventBus</PackageProjectUrl>
         <RepositoryType>Git</RepositoryType>
         <RootNamespace>Liyanjie.EventBus</RootNamespace>
         <PackageIcon>liyanjie.net.256.png</PackageIcon>
