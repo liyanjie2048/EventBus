@@ -36,13 +36,6 @@
     services.AddSimulationEventBus<TEventQueue>()
         where TEventQueue : class, ISimulationEventQueue;
     ```
-- #### Liyanjie.EventBus.Simulation.EF
-  - Extension Methods
-    ```csharp
-    //services is IServiceCollection
-    services.AddEFSimulationEventBus(this IServiceCollection services,
-        Func<IServiceProvider, EFContext> dbContextFactory);
-    ```
 - #### Liyanjie.EventBus.Simulation.EFCore
   - Extension Methods
     ```csharp
