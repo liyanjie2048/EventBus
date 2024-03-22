@@ -40,7 +40,7 @@ public class RabbitMQEventBus : IEventBus, IDisposable
             .Or<SocketException>()
             .WaitAndRetry(_settings.RetryCountWhenPublishEvent, retryAttempt => TimeSpan.FromSeconds(1), (exception, time) =>
             {
-                logger.LogWarning(exception.ToString());
+                logger.LogWarning(exception, exception.Message);
             });
         _subscriptionsManager.OnEventRemoved += SubscriptionsManager_OnEventRemoved;
 
